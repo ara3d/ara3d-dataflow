@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Ara3D.DataFlowEngine.Abstractions/Ara3D.DataFlowEngine.Abstractions.csproj" />
+    <Project Path="src/Ara3D.DataFlowEngine.Expressions/Ara3D.DataFlowEngine.Expressions.csproj" />
+    <Project Path="src/Ara3D.DataFlowEngine.Runs/Ara3D.DataFlowEngine.Runs.csproj" />
+    <Project Path="src/Ara3D.DataFlowEngine.TestKit/Ara3D.DataFlowEngine.TestKit.csproj" />
+    <Project Path="src/Ara3D.DataFlowEngine/Ara3D.DataFlowEngine.csproj" />
+    <Project Path="src/Ara3D.NodeGraph.Migrations/Ara3D.NodeGraph.Migrations.csproj" />
+    <Project Path="src/Ara3D.NodeGraph/Ara3D.NodeGraph.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ara3D.DataFlowEngine.Conformance/Ara3D.DataFlowEngine.Conformance.csproj" />
+    <Project Path="tests/Ara3D.DataFlowEngine.Expressions.Tests/Ara3D.DataFlowEngine.Expressions.Tests.csproj" />
+    <Project Path="tests/Ara3D.DataFlowEngine.Runs.Tests/Ara3D.DataFlowEngine.Runs.Tests.csproj" />
+    <Project Path="tests/Ara3D.DataFlowEngine.TestKit.Tests/Ara3D.DataFlowEngine.TestKit.Tests.csproj" />
+    <Project Path="tests/Ara3D.DataFlowEngine.Tests/Ara3D.DataFlowEngine.Tests.csproj" />
+    <Project Path="tests/Ara3D.NodeGraph.Migrations.Tests/Ara3D.NodeGraph.Migrations.Tests.csproj" />
+    <Project Path="tests/Ara3D.NodeGraph.Tests/Ara3D.NodeGraph.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,35 @@
+<Project>
+  <!--
+    When this repo is a submodule of a host repo (bim-open-toolkit), the host's
+    Directory.Build.props sits above us and wins for every version it defines.
+    Standalone, nothing is found above and the defaults below apply.
+  -->
+  <PropertyGroup>
+    <_HostBuildProps>$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))</_HostBuildProps>
+  </PropertyGroup>
+  <Import Project="$(_HostBuildProps)" Condition="'$(_HostBuildProps)' != ''" />
+
+  <PropertyGroup>
+    <Ara3DVersion Condition="'$(Ara3DVersion)' == ''">1.6.1</Ara3DVersion>
+    <Version Condition="'$(Version)' == ''">$(Ara3DVersion)</Version>
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">$(Ara3DVersion)</AssemblyVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">$(Ara3DVersion)</FileVersion>
+
+    <Authors Condition="'$(Authors)' == ''">Ara 3D Inc.</Authors>
+    <Company Condition="'$(Company)' == ''">Ara 3D Inc.</Company>
+    <PackageLicenseExpression Condition="'$(PackageLicenseExpression)' == ''">MIT</PackageLicenseExpression>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/ara3d/ara3d-dataflow</PackageProjectUrl>
+    <RepositoryUrl Condition="'$(RepositoryUrl)' == ''">https://github.com/ara3d/ara3d-dataflow</RepositoryUrl>
+    <RepositoryType Condition="'$(RepositoryType)' == ''">git</RepositoryType>
+    <PackageOutputPath Condition="'$(PackageOutputPath)' == ''">$(MSBuildThisFileDirectory)artifacts</PackageOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Central NuGet dependency versions (standalone defaults)">
+    <Ara3DSdkVersion Condition="'$(Ara3DSdkVersion)' == ''">1.6.2-local</Ara3DSdkVersion>
+    <Ara3DCoverletCollectorVersion Condition="'$(Ara3DCoverletCollectorVersion)' == ''">6.0.0</Ara3DCoverletCollectorVersion>
+    <Ara3DMicrosoftNetTestSdkVersion Condition="'$(Ara3DMicrosoftNetTestSdkVersion)' == ''">17.8.0</Ara3DMicrosoftNetTestSdkVersion>
+    <Ara3DNUnitAnalyzersVersion Condition="'$(Ara3DNUnitAnalyzersVersion)' == ''">3.9.0</Ara3DNUnitAnalyzersVersion>
+    <Ara3DNUnitVersion Condition="'$(Ara3DNUnitVersion)' == ''">3.14.0</Ara3DNUnitVersion>
+    <Ara3DNUnit3TestAdapterVersion Condition="'$(Ara3DNUnit3TestAdapterVersion)' == ''">4.5.0</Ara3DNUnit3TestAdapterVersion>
+  </PropertyGroup>
+</Project>
