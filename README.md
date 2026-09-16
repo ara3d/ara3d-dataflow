@@ -442,12 +442,13 @@ is exercised by tests with fake migrations.
 ### Prerequisites and build
 
 The .NET 8 SDK. The three `Ara3D.*` package dependencies (`Ara3D.Utils`,
-`Ara3D.Collections`, `Ara3D.DataTable`) come from nuget.org.
+`Ara3D.Collections`, `Ara3D.DataTable`) come from nuget.org; the standalone
+default version is pinned in `Directory.Build.props` as `Ara3DSdkVersion`.
 
 When this repository is checked out as a submodule of a host repository, the
 host's `Directory.Build.props` sits above this one and wins for every version
-property it defines, so package versions follow the host. Inside
-[BIM Open Toolkit](https://github.com/ara3d/bim-open-toolkit) these two
+property it defines, so package versions follow the host. Standalone or inside
+[BIM Open Toolkit](https://github.com/ara3d/bim-open-toolkit), these two
 commands build and test without further setup:
 
 ```bash
@@ -457,17 +458,6 @@ dotnet build Ara3D.DataFlow.slnx
 ```bash
 dotnet test Ara3D.DataFlow.slnx
 ```
-
-A standalone clone needs one extra property on 2026-09-16. The standalone
-default for `Ara3DSdkVersion` in `Directory.Build.props` is `1.6.2-local`, a
-version that is not published on nuget.org, so a fresh clone cannot restore
-it. Pass the published version instead:
-
-```bash
-dotnet build Ara3D.DataFlow.slnx -p:Ara3DSdkVersion=1.6.1
-```
-
-The same property applies to `dotnet test`.
 
 ### Writing a node
 

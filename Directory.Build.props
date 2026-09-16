@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Central NuGet dependency versions (standalone defaults)">
-    <Ara3DSdkVersion Condition="'$(Ara3DSdkVersion)' == ''">1.6.2-local</Ara3DSdkVersion>
+    <Ara3DSdkVersion Condition="'$(Ara3DSdkVersion)' == ''">1.6.1</Ara3DSdkVersion>
     <Ara3DCoverletCollectorVersion Condition="'$(Ara3DCoverletCollectorVersion)' == ''">6.0.0</Ara3DCoverletCollectorVersion>
     <Ara3DMicrosoftNetTestSdkVersion Condition="'$(Ara3DMicrosoftNetTestSdkVersion)' == ''">17.8.0</Ara3DMicrosoftNetTestSdkVersion>
     <Ara3DNUnitAnalyzersVersion Condition="'$(Ara3DNUnitAnalyzersVersion)' == ''">3.9.0</Ara3DNUnitAnalyzersVersion>
