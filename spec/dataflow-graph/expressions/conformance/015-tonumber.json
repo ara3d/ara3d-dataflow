@@ -1,0 +1,16 @@
+{
+  "part": "expressions",
+  "case": "015-tonumber",
+  "description": "toNumber parses text to Number with invariant culture and yields null (not an error) for text that is not a number, so coalesce can supply the fallback.",
+  "input": {
+    "expression": "coalesce(toNumber(width), 0) * 1000 + coalesce(toNumber(bad), 0)",
+    "environment": {
+      "width": { "type": "Text", "value": { "kind": "Text", "value": " 0.762 " } },
+      "bad": { "type": "Text", "value": { "kind": "Text", "value": "12 mm" } }
+    }
+  },
+  "expect": {
+    "type": "Number",
+    "value": { "kind": "Number", "value": 762 }
+  }
+}

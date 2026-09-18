@@ -17,7 +17,8 @@ elaborated in `spec/dataflow-graph/expressions/expressions.md`. Highlights:
   `%` Integer only; Integer widens to Number. Null propagates through every
   operator; `coalesce` returns the first non-null argument.
 - Builtins: `abs min max round floor ceil len lower upper contains startswith
-  endswith coalesce`.
+  endswith coalesce toNumber`. `toNumber(text)` is the one text-to-number
+  conversion; it yields null when the text does not parse.
 
 Usage: `Expression.Parse(text).Check(environment).Eval(lookup)`. Parse and type
 errors carry character offsets and are collected, not thrown; evaluation errors

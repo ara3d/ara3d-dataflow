@@ -231,6 +231,10 @@ public static class TypeChecker
                         TextArg(c, args[1]);
                     }
                     return ScalarType.Boolean;
+                case Builtin.ToNumber:
+                    if (Arity(c, args, 1, 1))
+                        TextArg(c, args[0]);
+                    return ScalarType.Number;
                 case Builtin.Coalesce:
                 {
                     if (!Arity(c, args, 2, int.MaxValue))

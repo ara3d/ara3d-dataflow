@@ -1,6 +1,6 @@
 # DataFlow Graph Expression Language
 
-**Part:** expressions | **Version:** 0.1.0 | **Status:** Draft
+**Part:** expressions | **Version:** 0.2.0 | **Status:** Draft
 
 Defines the expression language used by Expression-kind parameters on
 derive/filter/what-if nodes. The language is deliberately small and fully
@@ -158,11 +158,11 @@ result) except `coalesce`.
 | `startswith(Text, Text)` → Boolean | Boolean | ordinal, case-sensitive |
 | `endswith(Text, Text)` → Boolean | Boolean | ordinal, case-sensitive |
 | `coalesce(a, b, ...)` → unified type | unified | 2+ args, types unify as in `?:`; returns the first non-null argument, evaluating left to right and stopping there; null if all are null |
+| `toNumber(Text)` → Number | Number | parses a decimal or exponent literal (`-12`, `1.5`, `1e3`, `Infinity`, `NaN`) with optional sign and surrounding whitespace, invariant culture; **null when the text is not a number** (the only builtin that yields null from a non-null argument); since 0.2.0 |
 
 `abs`, `min`, `max`, `round`, `floor`, `ceil` accept Integer where Number
-is declared, via widening. There is no number→text or text→number
-conversion function in v0.1 beyond `&`'s implicit formatting; parsing text
-to numbers is a node's job, not an expression's.
+is declared, via widening. `toNumber` is the only text→number conversion;
+there is no number→text function beyond `&`'s implicit formatting.
 
 ## 7. The environment
 

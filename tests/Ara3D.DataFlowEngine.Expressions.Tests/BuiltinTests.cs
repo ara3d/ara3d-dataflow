@@ -44,6 +44,11 @@ public class BuiltinTests
     [TestCase("ceil(1.2)", 2.0)]
     [TestCase("ceil(-1.7)", -1.0)]
     [TestCase("ceil(3)", 3.0)]
+    [TestCase("toNumber('1.5')", 1.5)]
+    [TestCase("toNumber('-12')", -12.0)]
+    [TestCase("toNumber(' 2 ')", 2.0)]
+    [TestCase("toNumber('1e3')", 1000.0)]
+    [TestCase("toNumber('0.762') * 1000", 762.0)]
     public void NumberBuiltins(string text, double expected)
         => Assert.That(Eval(text), Is.EqualTo(new NumberScalar(expected)));
 
@@ -84,6 +89,7 @@ public class BuiltinTests
     [TestCase("coalesce(1, 2)", ScalarType.Integer)]
     [TestCase("coalesce(1.0, 2)", ScalarType.Number)]
     [TestCase("coalesce('a', 'b')", ScalarType.Text)]
+    [TestCase("toNumber('1')", ScalarType.Number)]
     public void BuiltinResultTypes(string text, ScalarType expected)
         => Assert.That(TypeOf(text), Is.EqualTo(expected));
 
@@ -96,6 +102,21 @@ public class BuiltinTests
     {
         Assert.That(() => Eval("round(1.5, 16)"), Throws.TypeOf<EvaluationException>());
         Assert.That(() => Eval("round(1.5, -1)"), Throws.TypeOf<EvaluationException>());
+    }
+
+    [TestCase("toNumber('abc')")]
+    [TestCase("toNumber('')")]
+    [TestCase("toNumber('1,5')")]
+    [TestCase("toNumber('12 mm')")]
+    [TestCase("toNumber(nt)")]
+    public void ToNumberIsNullWhenTheTextIsNotANumber(string text)
+        => Assert.That(Eval(text), Is.Null);
+
+    [Test]
+    public void ToNumberParsesNonFiniteSpellings()
+    {
+        Assert.That(((NumberScalar)Eval("toNumber('NaN')")!).Value, Is.NaN);
+        Assert.That(((NumberScalar)Eval("toNumber('-Infinity')")!).Value, Is.EqualTo(double.NegativeInfinity));
     }
 
     [Test]
@@ -130,6 +151,8 @@ public class BuiltinTests
     [TestCase("contains('a', 1)", "Text argument")]
     [TestCase("startswith(1, 'a')", "Text argument")]
     [TestCase("endswith('a', true)", "Text argument")]
+    [TestCase("toNumber(1)", "Text argument")]
+    [TestCase("toNumber(n)", "Text argument")]
     public void ArgumentTypeErrors(string text, string messagePart)
         => Assert.That(FirstTypeError(text).Message, Does.Contain(messagePart));
 

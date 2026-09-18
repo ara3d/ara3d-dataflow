@@ -1,3 +1,4 @@
+using System.Globalization;
 using Ara3D.DataFlowEngine.Expressions.Typing;
 
 namespace Ara3D.DataFlowEngine.Expressions.Evaluation;
@@ -26,6 +27,7 @@ internal static class BuiltinEvaluator
         }
         return call.Builtin switch
         {
+            Builtin.ToNumber => ToNumber(args[0].AsText()),
             Builtin.Abs => Abs(args[0]),
             Builtin.Min => MinMax(call, args, min: true),
             Builtin.Max => MinMax(call, args, min: false),
@@ -41,6 +43,13 @@ internal static class BuiltinEvaluator
             _ => throw new EvaluationException($"Unknown builtin {call.Builtin}"),
         };
     }
+
+    /// <summary>Invariant-culture parse of a decimal or exponent literal with optional sign and
+    /// surrounding whitespace (NumberStyles.Float); null when the text is not a number.</summary>
+    private static Scalar? ToNumber(string text)
+        => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value)
+            ? new NumberScalar(value)
+            : null;
 
     private static Scalar Abs(Scalar value)
         => value is IntegerScalar i

@@ -15,6 +15,7 @@ public enum Builtin
     StartsWith,
     EndsWith,
     Coalesce,
+    ToNumber,
 }
 
 public static class Builtins
@@ -36,6 +37,7 @@ public static class Builtins
             "startswith" => Builtin.StartsWith,
             "endswith" => Builtin.EndsWith,
             "coalesce" => Builtin.Coalesce,
+            "toNumber" => Builtin.ToNumber,
             _ => null,
         };
 }
