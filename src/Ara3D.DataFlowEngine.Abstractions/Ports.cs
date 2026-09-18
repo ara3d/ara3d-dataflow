@@ -7,6 +7,7 @@ public enum PortType
     Number,
     Text,
     Table,
+    Relation,
     Any,
 }
 
@@ -28,6 +29,7 @@ public static class PortTypeExtensions
             PortType.Number => value == ValueKind.Number,
             PortType.Text => value == ValueKind.Text,
             PortType.Table => value == ValueKind.Table,
+            PortType.Relation => value == ValueKind.Relation,
             _ => false,
         };
 }

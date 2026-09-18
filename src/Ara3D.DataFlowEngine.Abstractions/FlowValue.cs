@@ -10,6 +10,10 @@ public enum ValueKind
     Text,
     Table,
 
+    /// <summary>A relation: a logical plan and its schema, not rows. Rows exist only once an
+    /// executor materializes the plan.</summary>
+    Relation,
+
     /// <summary>Not a wire value: the placeholder for an unconnected optional input.</summary>
     Missing,
 }
@@ -45,6 +49,22 @@ public sealed record TextValue(string Value) : FlowValue
 public sealed record TableValue(IDataTable Table) : FlowValue
 {
     public override ValueKind Kind => ValueKind.Table;
+}
+
+/// <summary>
+/// A plan in canonical text plus its content hash. The engine hashes and records only the
+/// text and hash; Payload is the in-process plan object for downstream nodes and is never
+/// part of identity, so a value read back from a run record (Payload null) equals the original.
+/// </summary>
+public sealed record RelationValue(string Text, string Hash, object? Payload = null) : FlowValue
+{
+    public override ValueKind Kind => ValueKind.Relation;
+
+    public bool Equals(RelationValue? other)
+        => other is not null && Text == other.Text && Hash == other.Hash;
+
+    public override int GetHashCode()
+        => System.HashCode.Combine(Text, Hash);
 }
 
 /// <summary>

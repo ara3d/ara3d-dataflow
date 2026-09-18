@@ -127,3 +127,20 @@ public class JsonTests
         Assert.That(tampered.FirstCorruptOutput(), Is.EqualTo("t.out"));
     }
 }
+
+[TestFixture]
+public class RelationJsonTests
+{
+    [Test]
+    public void Relation_round_trips_as_text_and_hash()
+    {
+        var original = new RelationValue("(table \"db\" \"walls\")", "abc123", Payload: new object());
+        using var stream = new MemoryStream();
+        using (var writer = new System.Text.Json.Utf8JsonWriter(stream))
+            ValueJson.Write(writer, original);
+        using var doc = System.Text.Json.JsonDocument.Parse(stream.ToArray());
+        var read = ValueJson.Read(doc.RootElement);
+        Assert.That(read, Is.EqualTo(original));
+        Assert.That(((RelationValue)read).Payload, Is.Null);
+    }
+}

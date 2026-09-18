@@ -37,6 +37,7 @@ public static class ValueHash
             case NumberValue n: WriteNumber(w, n.Value); break;
             case TextValue t: WriteText(w, t.Value); break;
             case TableValue t: WriteTable(w, t.Table); break;
+            case RelationValue r: WriteRelation(w, r); break;
             default: throw new ArgumentException($"Unknown flow value type {value.GetType().Name}");
         }
     }
@@ -65,6 +66,13 @@ public static class ValueHash
         w.Write((byte)0x04);
         w.Write((long)bytes.Length);
         w.Write(bytes);
+    }
+
+    /// <summary>A relation's identity is its plan hash; the rows it would produce are never touched.</summary>
+    private static void WriteRelation(BinaryWriter w, RelationValue relation)
+    {
+        w.Write((byte)0x06);
+        WriteText(w, relation.Hash);
     }
 
     private static void WriteTable(BinaryWriter w, IDataTable table)
