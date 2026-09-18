@@ -47,6 +47,14 @@ internal static class TestNodes
         new FakeNode(Spec("test.effect", Ports(In(PortType.Any)), Ports(Out(PortType.Any)),
                 capability: NodeCapability.Effect),
             (_, i, _) => new[] { i[0] }),
+        // An effect that fails every time it runs.
+        new FakeNode(Spec("test.effectThrow", Ports(In(PortType.Any)), Ports(Out(PortType.Any)),
+                capability: NodeCapability.Effect),
+            (_, _, _) => throw new InvalidOperationException("effect failed")),
+        // Passes through the context's IsRun flag as a Boolean, to observe the run context.
+        new FakeNode(Spec("test.isRun", Ports(In(PortType.Any)), Ports(Out(PortType.Boolean)),
+                capability: NodeCapability.Effect),
+            (c, _, _) => new FlowValue[] { new BooleanValue(c.IsRun) }),
     });
 
     /// <summary>const(value) -> negate -> probe, ids c/n/p.</summary>

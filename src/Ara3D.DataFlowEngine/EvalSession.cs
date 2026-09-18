@@ -11,7 +11,9 @@ namespace Ara3D.DataFlowEngine;
 /// A standing, synchronous, single-threaded evaluation over a mutable current
 /// document. Each SetDocument/UpdateDocument validates, runs one pass (through
 /// the memo cache, so unchanged nodes never re-execute), commits atomically,
-/// then notifies observers. On cancellation or invalid input the previous
+/// then notifies observers. Run executes the current document's Effect nodes
+/// (spec semantics §6) and commits that snapshot the same way; the next standing
+/// pass returns them to pending. On cancellation or invalid input the previous
 /// snapshot stays current.
 /// </summary>
 public sealed class EvalSession
@@ -38,13 +40,25 @@ public sealed class EvalSession
 
     /// <summary>Validates, evaluates, commits, and notifies. Throws InvalidGraphException on validation errors.</summary>
     public EvalSnapshot SetDocument(GraphDocument doc, CancellationToken ct = default)
+        => Commit(doc, isRun: false, ct);
+
+    /// <summary>
+    /// A Run over the current document: Pure nodes come from the memo cache where
+    /// unchanged, every reachable ready Effect node executes exactly once in
+    /// topological order (ties by node id), and its downstream evaluates over the
+    /// effect's outputs. The snapshot becomes current, so observers see the run.
+    /// </summary>
+    public EvalSnapshot Run(CancellationToken ct = default)
+        => Commit(Document, isRun: true, ct);
+
+    private EvalSnapshot Commit(GraphDocument doc, bool isRun, CancellationToken ct)
     {
         var errors = doc.Validate(_registry);
         if (errors.Count > 0)
             throw new InvalidGraphException(errors);
 
         var counts = new Dictionary<string, int>(_counts);
-        var (results, warnings) = Evaluator.Run(doc, _registry, _memo, counts, ct);
+        var (results, warnings) = Evaluator.Pass(doc, _registry, _memo, counts, isRun, ct);
 
         var previous = Snapshot;
         _counts = counts;

@@ -60,10 +60,8 @@ public class SemanticsVectorTests
             $"output '{endpoint}'");
 
     /// <summary>
-    /// Drives one vector: a standing session plus a minimal Run driver executing
-    /// pending Effect nodes in topological order, ties by node id (semantics par.6).
-    /// The engine has no Run implementation yet; when Ara3D.DataFlowEngine grows
-    /// one, this driver should delegate to it.
+    /// Drives one vector over a standing session; the run step is the engine's own
+    /// EvalSession.Run, and the effect order is read back from the run snapshot.
     /// </summary>
     private sealed class StepHarness(GraphDocument doc)
     {
@@ -103,20 +101,9 @@ public class SemanticsVectorTests
 
         private (IReadOnlyDictionary<string, int>, IReadOnlyList<string>) Run()
         {
-            var executions = new Dictionary<string, int>(Evaluate());
-            var order = new List<string>();
-            foreach (var node in _doc.Sort())
-            {
-                var result = _session.Result(node.Id);
-                if (result.Status != NodeStatus.EffectPending)
-                    continue;
-                var flowNode = _session.Registry.Find(node.Kind, node.Version)!;
-                flowNode.Eval(RunContext.Instance, result.EffectInputs,
-                    new ParamValues(_doc.Values.GetValueOrDefault(node.Id) ?? new Dictionary<string, string>()));
-                executions[node.Id] = executions.GetValueOrDefault(node.Id) + 1;
-                order.Add(node.Id);
-            }
-            return (executions, order);
+            _session.Evaluate(_doc);
+            var snapshot = _session.Session.Run();
+            return (EngineCountDeltas(), snapshot.ExecutedEffects(_session.Registry));
         }
 
         private IReadOnlyDictionary<string, int> EngineCountDeltas()
@@ -129,19 +116,6 @@ public class SemanticsVectorTests
                 _seenEngineCounts[node.Id] = count;
             }
             return deltas;
-        }
-    }
-
-    private sealed class RunContext : IEvalContext
-    {
-        public static readonly RunContext Instance = new();
-
-        public bool IsRun => true;
-
-        public CancellationToken Cancellation => CancellationToken.None;
-
-        public void Warn(string message)
-        {
         }
     }
 }

@@ -9,18 +9,20 @@ namespace Ara3D.DataFlowEngine;
 
 /// <summary>
 /// One evaluation pass over a validated document. Pure nodes evaluate (or hit the
-/// memo cache); Effect nodes are skipped with their would-be inputs captured.
-/// Mutates only the memo cache and execution counts handed to it.
+/// memo cache). Outside a Run, Effect nodes are skipped with their would-be inputs
+/// captured; inside a Run they execute, never through the memo cache, in the pass's
+/// topological order. Mutates only the memo cache and execution counts handed to it.
 /// </summary>
 internal static class Evaluator
 {
     private static readonly IReadOnlyDictionary<string, string> EmptyParams = new Dictionary<string, string>();
 
-    public static (Dictionary<string, NodeResult> Results, List<string> Warnings) Run(
+    public static (Dictionary<string, NodeResult> Results, List<string> Warnings) Pass(
         GraphDocument doc,
         INodeRegistry registry,
         MemoCache memo,
         Dictionary<string, int> counts,
+        bool isRun,
         CancellationToken ct)
     {
         var flowNodes = doc.Nodes.ToDictionary(n => n.Id, n => registry.Find(n.Kind, n.Version)!);
@@ -31,7 +33,7 @@ internal static class Evaluator
         foreach (var node in doc.Sort())
         {
             ct.ThrowIfCancellationRequested();
-            var result = EvaluateNode(node, flowNodes, doc, edgeInto, results, memo, counts, ct);
+            var result = EvaluateNode(node, flowNodes, doc, edgeInto, results, memo, counts, isRun, ct);
             results[node.Id] = result;
             foreach (var w in result.Warnings)
                 warnings.Add($"{node.Id}: {w}");
@@ -47,6 +49,7 @@ internal static class Evaluator
         IReadOnlyDictionary<string, NodeResult> results,
         MemoCache memo,
         Dictionary<string, int> counts,
+        bool isRun,
         CancellationToken ct)
     {
         var flowNode = flowNodes[node.Id];
@@ -95,32 +98,35 @@ internal static class Evaluator
         if (unready)
             return new(node.Id, NodeStatus.Unready, NodeResult.NoValues, NodeResult.NoStrings,
                 NodeResult.NoValues, NodeResult.NoStrings, BlockingNodeId: unreadyOrigin, ExecutionCount: count);
-        if (spec.Capability == NodeCapability.Effect)
+        var isEffect = spec.Capability == NodeCapability.Effect;
+        if (isEffect && !isRun)
             return new(node.Id, NodeStatus.EffectPending, NodeResult.NoValues, NodeResult.NoStrings,
                 inputs, NodeResult.NoStrings, ExecutionCount: count);
 
-        return EvaluatePure(node, flowNode, doc, inputs, inputHashes, memo, counts, ct);
+        // Spec semantics §4: Effect nodes are never memoized; every Run executes them.
+        return Execute(node, flowNode, doc, inputs, inputHashes, isEffect ? null : memo, counts, isRun, ct);
     }
 
-    private static NodeResult EvaluatePure(
+    private static NodeResult Execute(
         GraphNode node,
         IFlowNode flowNode,
         GraphDocument doc,
         IReadOnlyList<FlowValue> inputs,
         IReadOnlyList<(string Port, string Hash)> inputHashes,
-        MemoCache memo,
+        MemoCache? memo,
         Dictionary<string, int> counts,
+        bool isRun,
         CancellationToken ct)
     {
         var spec = flowNode.Spec;
         var parameters = doc.Values.GetValueOrDefault(node.Id) ?? EmptyParams;
         var key = MemoKey.Compute(node.Kind, node.Version, parameters, inputHashes);
-        if (memo.TryGet(key, out var entry))
+        if (memo is not null && memo.TryGet(key, out var entry))
             return new(node.Id, NodeStatus.Ok, entry.Outputs, entry.OutputHashes,
                 NodeResult.NoValues, entry.Warnings, ExecutionCount: counts.GetValueOrDefault(node.Id));
 
         var warnings = new List<string>();
-        var context = new EvalContext(isRun: false, ct, warnings.Add);
+        var context = new EvalContext(isRun, ct, warnings.Add);
         counts[node.Id] = counts.GetValueOrDefault(node.Id) + 1;
         try
         {
@@ -131,7 +137,7 @@ internal static class Evaluator
                 throw new InvalidOperationException(
                     $"Node returned {outputs.Count} outputs; spec declares {spec.Outputs.Count}");
             var hashes = outputs.Select(ValueHash.Compute).ToList();
-            memo.Add(key, new(outputs, hashes, warnings));
+            memo?.Add(key, new(outputs, hashes, warnings));
             return new(node.Id, NodeStatus.Ok, outputs, hashes,
                 NodeResult.NoValues, warnings, ExecutionCount: counts[node.Id]);
         }

@@ -68,10 +68,29 @@ public class FreezeTests
     }
 
     [Test]
+    public void RunSnapshot_RecordsExecutedEffectsAndTheirOutputs()
+    {
+        var doc = TestGraphs.Doc(
+            new GraphNode[] { new("a", "test.const", 1), new("sink", "test.effect", 1) },
+            new GraphEdge[] { new("a.out", "sink.in") },
+            new Dictionary<string, IReadOnlyDictionary<string, string>>
+            {
+                ["a"] = TestGraphs.Params(("kind", "Integer"), ("value", "5")),
+            });
+        var record = Freeze(doc.Run(TestGraphs.Registry));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(record.Effects, Is.EqualTo(new[] { new EffectRecord("sink", EffectStatus.Ok) }));
+            Assert.That(record.NodeOutputs["sink.out"], Is.EqualTo(ValueHash.Compute(new IntegerValue(5))));
+            Assert.That(record.RecordedOutputs.Keys, Is.EqualTo(new[] { "sink.out" }), "the effect's output is terminal");
+        });
+    }
+
+    [Test]
     public void ExecutedEffects_RecordedInTopologicalOrder()
     {
-        // Hand-built snapshot: the engine has no Run mode yet, so an executed
-        // Effect node's Ok/Error state is constructed directly.
+        // Hand-built snapshot, so a failed effect can be frozen without a throwing node kind.
         var doc = TestGraphs.Doc(
             new GraphNode[] { new("a", "test.const", 1), new("s2", "test.effect", 1), new("s1", "test.effect", 1) },
             new GraphEdge[] { new("a.out", "s1.in"), new("a.out", "s2.in") },

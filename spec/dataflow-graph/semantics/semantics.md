@@ -156,6 +156,13 @@ consistent snapshot of the graph and its inputs:
    not transactional in v0.1).
 4. The completed Run is frozen into a run record per the runs part.
 
+The Run's snapshot (Pure results, Effect outputs, and the downstream of each
+Effect node evaluated over those outputs) is one consistent snapshot in the
+sense of §7. An engine MAY make it the session's current snapshot and notify
+observers with it; the next standing pass returns every Effect node to
+*pending*. Effect nodes see `IsRun` true through their evaluation context, and
+so do Pure nodes that execute during the Run rather than coming from the memo.
+
 Nothing outside a Run may change the world. An engine extension or node that
 performs effects during standing evaluation does not conform.
 

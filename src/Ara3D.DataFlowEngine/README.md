@@ -19,9 +19,18 @@ Contains no I/O and no BIM.
   pass in topological order (ties by node id, ordinal), commit atomically, and
   notify observers. Observers subscribe to all passes or to one node's changes.
 - `GraphEvaluator.Evaluate(doc, registry)` — one-shot convenience.
-- Effect nodes are never executed here: their inputs are computed and exposed
-  (`NodeResult.EffectInputs`), the node reports `EffectPending`, and its
-  downstream is `Unavailable`. Running effects is the Runs project's concern.
+- In a standing pass Effect nodes are not executed: their inputs are computed
+  and exposed (`NodeResult.EffectInputs`), the node reports `EffectPending`,
+  and its downstream is `Unavailable`.
+- `EvalSession.Run(ct)` is the spec's Run (semantics §6): one pass over the
+  current document with `IsRun` true, Pure nodes from the memo cache where
+  unchanged, every reachable ready Effect node executed exactly once in
+  topological order (never memoized), and its downstream evaluated over the
+  effect's outputs. The run snapshot becomes the session's current snapshot,
+  so observers see it; the next standing pass returns effects to pending.
+  `GraphEvaluator.Run(doc, registry)` is the one-shot form and
+  `snapshot.ExecutedEffects(registry)` lists the effects that ran, in order.
+  Freezing a run snapshot into a record is the Runs project's concern.
 - A node that throws reports `Error` and poisons only its own downstream
   (`Unavailable` with `BlockingNodeId`); independent branches are unaffected.
 - Cancellation via `IEvalContext.Cancellation`; a cancelled pass leaves the
