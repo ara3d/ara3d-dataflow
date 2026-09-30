@@ -37,3 +37,8 @@ public sealed record Unary(int Position, UnaryOp Op, Expr Operand) : Expr(Positi
 public sealed record Binary(int Position, BinaryOp Op, Expr Left, Expr Right) : Expr(Position);
 public sealed record Conditional(int Position, Expr Condition, Expr WhenTrue, Expr WhenFalse) : Expr(Position);
 public sealed record Call(int Position, string Name, IReadOnlyList<Expr> Args) : Expr(Position);
+
+/// <summary>Membership test <c>value in (item, ...)</c>, or <c>not in</c> when Negated.
+/// Items are non-null literals (a numeric literal may be negated), so the result is
+/// null only when the value is null.</summary>
+public sealed record InList(int Position, Expr Value, IReadOnlyList<Expr> Items, bool Negated) : Expr(Position);

@@ -8,6 +8,7 @@ public enum TokenKind
     And,
     Or,
     Not,
+    In,
     Identifier,
     Integer,
     Number,

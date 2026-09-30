@@ -1,6 +1,6 @@
 # DataFlow Graph Expression Language
 
-**Part:** expressions | **Version:** 0.2.0 | **Status:** Draft
+**Part:** expressions | **Version:** 0.3.0 | **Status:** Draft
 
 Defines the expression language used by Expression-kind parameters on
 derive/filter/what-if nodes. The language is deliberately small and fully
@@ -33,8 +33,9 @@ The type lattice is the semantics part's value kinds — Boolean, Integer
 
 - **Whitespace** — space, tab, CR, LF between tokens; no significance.
   There are no comments in v0.1.
-- **Keywords** — `and`, `or`, `not`, `true`, `false`, `null`. Lowercase,
-  case-sensitive; not usable as bare identifiers.
+- **Keywords** — `and`, `or`, `not`, `in`, `true`, `false`, `null`.
+  Lowercase, case-sensitive; not usable as bare identifiers (`[in]` still
+  names a column called `in`). `in` is reserved since 0.3.0.
 - **Identifiers** — bare: `[A-Za-z_][A-Za-z0-9_]*`. Quoted:
   `[` ... `]` containing any characters, with `]]` escaping a literal `]`
   (e.g. `[Fire Rating]`, `[Weird]]Name]`). Bare and quoted forms naming the
@@ -55,7 +56,10 @@ Expr      = CondExpr ;
 CondExpr  = OrExpr [ "?" Expr ":" CondExpr ] ;          (* right-assoc *)
 OrExpr    = AndExpr { "or" AndExpr } ;
 AndExpr   = CmpExpr { "and" CmpExpr } ;
-CmpExpr   = CatExpr { ("==" | "!=" | "<" | "<=" | ">" | ">=") CatExpr } ;
+CmpExpr   = CatExpr { ("==" | "!=" | "<" | "<=" | ">" | ">=") CatExpr
+                    | [ "not" ] "in" "(" ListItem { "," ListItem } ")" } ;
+ListItem  = IntegerLit | NumberLit | TextLit | "true" | "false"
+          | "-" ( IntegerLit | NumberLit ) ;   (* checked after parsing a CatExpr *)
 CatExpr   = AddExpr { "&" AddExpr } ;
 AddExpr   = MulExpr { ("+" | "-") MulExpr } ;
 MulExpr   = UnaryExpr { ("*" | "/" | "%") UnaryExpr } ;
@@ -80,14 +84,16 @@ conditional is right-associative:
 | 2 | `*` `/` `%` | |
 | 3 | `+` `-` | |
 | 4 | `&` | text concatenation |
-| 5 | `==` `!=` `<` `<=` `>` `>=` | left-assoc; chains like `a < b < c` parse but then fail typing |
+| 5 | `==` `!=` `<` `<=` `>` `>=` `in` `not in` | left-assoc; chains like `a < b < c` parse but then fail typing |
 | 6 | `and` | |
 | 7 | `or` | |
 | 8 (lowest) | `?` `:` | right-assoc |
 
 Consequences worth noting: `not` binds tighter than comparison, so
 `not a == b` is `(not a) == b`; and `&` binds tighter than comparison, so
-`a & b == c` is `(a & b) == c`.
+`a & b == c` is `(a & b) == c`. The `not` of `not in` is part of the
+operator, so `a not in (1)` is the negated membership test while
+`not a in (true)` is `(not a) in (true)`.
 
 ## 5. Operator typing and semantics
 
@@ -98,9 +104,10 @@ misconfigured (unready per the semantics part), never a runtime crash.
 **Null propagation (the one blanket rule):** every operator — arithmetic,
 comparison, equality, `&`, `and`, `or`, `not`, unary `-`, and `?:` (on a
 null condition) — yields null if any evaluated operand is null. There is no
-three-valued logic and no special null equality; `coalesce` (§6) is the
-tool for handling nulls. Consequence: `x == null` is always null, never
-true — test for absence with `coalesce`, e.g. `coalesce(x, fallback)`.
+three-valued logic and no special null equality; `isnull` and `coalesce`
+(§6) are the tools for handling nulls. Consequence: `x == null` is always
+null, never true — test for absence with `isnull(x)`, or supply a
+fallback with `coalesce(x, fallback)`.
 
 - **Unary `-`** — Integer → Integer, Number → Number. Negating Int64
   minimum is an evaluation error (overflow).
@@ -131,6 +138,14 @@ true — test for absence with `coalesce`, e.g. `coalesce(x, fallback)`.
   Integer/Number unifying to Number (Any unifies with anything, to Any).
   Only the selected branch is evaluated; a null condition yields null
   without evaluating either branch.
+- **`in` / `not in`** — `x in (a, b, ...)` is true when `x == item` for
+  some item, with `==`'s typing and semantics per item; `not in` is its
+  negation. Items are non-null literals (a numeric literal may carry a
+  unary `-`), so a column or `null` item is a syntax error, and an item
+  whose type cannot be compared with `x` is a type error. The result is
+  null only when `x` is null. Restricting items to literals keeps the
+  blanket null rule exact and makes the operator agree with SQL `IN` for
+  hosts that translate expressions to SQL. Since 0.3.0.
 - **`and` / `or`** — Boolean operands → Boolean. Not short-circuiting: both
   operands are evaluated, and a null on either side yields null (`false and
   null` is null, not false). This keeps the blanket null rule exact; use
@@ -144,7 +159,7 @@ the owning node per the semantics part; they are deterministic.
 
 The complete, closed list for v0.1. Wrong argument count or argument types
 are static errors. All builtins propagate null (any null argument → null
-result) except `coalesce`.
+result) except `coalesce` and `isnull`.
 
 | Signature | Result | Semantics |
 |---|---|---|
@@ -158,6 +173,7 @@ result) except `coalesce`.
 | `startswith(Text, Text)` → Boolean | Boolean | ordinal, case-sensitive |
 | `endswith(Text, Text)` → Boolean | Boolean | ordinal, case-sensitive |
 | `coalesce(a, b, ...)` → unified type | unified | 2+ args, types unify as in `?:`; returns the first non-null argument, evaluating left to right and stopping there; null if all are null |
+| `isnull(a)` → Boolean | Boolean | one argument of any type; true when it is null, false otherwise, never null itself; since 0.3.0 |
 | `toNumber(Text)` → Number | Number | parses a decimal or exponent literal (`-12`, `1.5`, `1e3`, `Infinity`, `NaN`) with optional sign and surrounding whitespace, invariant culture; **null when the text is not a number** (the only builtin that yields null from a non-null argument); since 0.2.0 |
 
 `abs`, `min`, `max`, `round`, `floor`, `ceil` accept Integer where Number

@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "019-in-list-item-not-literal",
+  "description": "Items of an in list are non-null literals, so no item can be null and the result matches SQL IN exactly; a column or null item is a syntax error.",
+  "input": {
+    "expression": "a in (b, null)",
+    "environment": {
+      "a": { "type": "Integer", "value": { "kind": "Integer", "value": 1 } },
+      "b": { "type": "Integer", "value": { "kind": "Integer", "value": 1 } }
+    }
+  },
+  "expect": {
+    "error": "syntax"
+  }
+}

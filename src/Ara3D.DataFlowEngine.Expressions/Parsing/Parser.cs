@@ -71,7 +71,25 @@ public static class Parser
             => ParseLeftAssoc(ParseComparison, k => k == TokenKind.And ? BinaryOp.And : null);
 
         private Expr ParseComparison()
-            => ParseLeftAssoc(ParseConcat, k => k switch
+        {
+            var left = ParseConcat();
+            while (true)
+            {
+                if (ComparisonOp(Current.Kind) is { } op)
+                {
+                    var position = Advance().Position;
+                    left = new Binary(position, op, left, ParseConcat());
+                }
+                else if (Current.Kind == TokenKind.In
+                    || (Current.Kind == TokenKind.Not && Next.Kind == TokenKind.In))
+                    left = ParseInList(left);
+                else
+                    return left;
+            }
+        }
+
+        private static BinaryOp? ComparisonOp(TokenKind kind)
+            => kind switch
             {
                 TokenKind.Eq => BinaryOp.Eq,
                 TokenKind.Ne => BinaryOp.Ne,
@@ -80,7 +98,34 @@ public static class Parser
                 TokenKind.Gt => BinaryOp.Gt,
                 TokenKind.Ge => BinaryOp.Ge,
                 _ => null,
-            });
+            };
+
+        private Token Next => tokens[Math.Min(_index + 1, tokens.Count - 1)];
+
+        private Expr ParseInList(Expr value)
+        {
+            var position = Current.Position;
+            var negated = Match(TokenKind.Not);
+            Advance();
+            if (!Match(TokenKind.LParen))
+                Fail(Current.Position, "Expected '(' after 'in'");
+            var items = new List<Expr>();
+            do
+            {
+                var item = ParseConcat();
+                if (!IsListLiteral(item))
+                    Fail(item.Position, "Items of an 'in' list must be non-null literals");
+                items.Add(item);
+            }
+            while (Match(TokenKind.Comma));
+            if (!Match(TokenKind.RParen))
+                Fail(Current.Position, "Expected ')' after 'in' list");
+            return new InList(position, value, items, negated);
+        }
+
+        private static bool IsListLiteral(Expr expr)
+            => expr is BooleanLiteral or IntegerLiteral or NumberLiteral or TextLiteral
+                || expr is Unary { Op: UnaryOp.Negate, Operand: IntegerLiteral or NumberLiteral };
 
         private Expr ParseConcat()
             => ParseLeftAssoc(ParseAdditive, k => k == TokenKind.Amp ? BinaryOp.Concat : null);

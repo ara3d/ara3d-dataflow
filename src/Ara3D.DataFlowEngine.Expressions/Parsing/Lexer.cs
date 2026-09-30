@@ -92,6 +92,7 @@ public static class Lexer
             "and" => TokenKind.And,
             "or" => TokenKind.Or,
             "not" => TokenKind.Not,
+            "in" => TokenKind.In,
             _ => TokenKind.Identifier,
         };
         tokens.Add(new(kind, start, i - start, kind == TokenKind.Identifier ? word : null));

@@ -1,0 +1,16 @@
+{
+  "part": "expressions",
+  "case": "016-isnull",
+  "description": "isnull is the one test for a missing value: true for a null cell, false otherwise, never null itself, so a filter on it keeps or drops rows as expected.",
+  "input": {
+    "expression": "isnull(width) and not isnull(mark)",
+    "environment": {
+      "width": { "type": "Number", "value": { "kind": "Number", "value": null } },
+      "mark": { "type": "Text", "value": { "kind": "Text", "value": "D-101" } }
+    }
+  },
+  "expect": {
+    "type": "Boolean",
+    "value": { "kind": "Boolean", "value": true }
+  }
+}

@@ -26,6 +26,7 @@ public static class Evaluator
             TypedBinary b => EvalBinary(b, lookup),
             TypedConditional c => EvalConditional(c, lookup),
             TypedCall c => BuiltinEvaluator.EvalCall(c, lookup),
+            TypedInList l => EvalInList(l, lookup),
             _ => throw new EvaluationException($"Unknown node {expr.GetType().Name}"),
         };
 
@@ -49,6 +50,15 @@ public static class Evaluator
         return condition == null ? null
             : condition.AsBool() ? c.WhenTrue.Eval(lookup)
             : c.WhenFalse.Eval(lookup);
+    }
+
+    private static Scalar? EvalInList(TypedInList l, Func<string, Scalar?> lookup)
+    {
+        var value = l.Value.Eval(lookup);
+        if (value == null)
+            return null;
+        var found = l.Items.Any(item => EvalEquality(BinaryOp.Eq, value, item.Eval(lookup)!).AsBool());
+        return new BooleanScalar(found != l.Negated);
     }
 
     private static Scalar? EvalBinary(TypedBinary b, Func<string, Scalar?> lookup)

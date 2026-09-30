@@ -7,6 +7,8 @@ internal static class BuiltinEvaluator
 {
     public static Scalar? EvalCall(TypedCall call, Func<string, Scalar?> lookup)
     {
+        if (call.Builtin == Builtin.IsNull)
+            return new BooleanScalar(call.Args[0].Eval(lookup) == null);
         if (call.Builtin == Builtin.Coalesce)
         {
             foreach (var arg in call.Args)

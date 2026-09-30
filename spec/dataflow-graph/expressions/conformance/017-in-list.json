@@ -1,0 +1,16 @@
+{
+  "part": "expressions",
+  "case": "017-in-list",
+  "description": "in tests membership in a list of literals with == semantics (ordinal text, mixed Integer and Number compare as Number); not in negates it.",
+  "input": {
+    "expression": "category in ('IFCDOOR', 'IFCWINDOW') and storey not in (-1, 0.5)",
+    "environment": {
+      "category": { "type": "Text", "value": { "kind": "Text", "value": "IFCDOOR" } },
+      "storey": { "type": "Integer", "value": { "kind": "Integer", "value": 2 } }
+    }
+  },
+  "expect": {
+    "type": "Boolean",
+    "value": { "kind": "Boolean", "value": true }
+  }
+}

@@ -20,6 +20,7 @@ public static class AstRenderer
             Binary b => $"({OpText(b.Op)} {b.Left.Render()} {b.Right.Render()})",
             Conditional c => $"(if {c.Condition.Render()} {c.WhenTrue.Render()} {c.WhenFalse.Render()})",
             Call c => $"({c.Name}{string.Concat(c.Args.Select(a => " " + a.Render()))})",
+            InList l => $"({(l.Negated ? "not-in" : "in")} {l.Value.Render()}{string.Concat(l.Items.Select(a => " " + a.Render()))})",
             _ => throw new InvalidOperationException(expr.GetType().Name),
         };
 

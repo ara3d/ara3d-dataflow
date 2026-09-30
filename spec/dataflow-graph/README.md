@@ -16,7 +16,7 @@ touching the others.
 |---|---|---|---|
 | [format](format/format.md) | 0.1.0 | The graph document: four layers (`structure`, `values`, `layout`, `session`), canonical JSON serialization, the graph hash. | `Ara3D.NodeGraph` |
 | [semantics](semantics/semantics.md) | 0.1.0 | Evaluation: determinism, value kinds and hashing, memoization, dirty propagation, standing sessions, Pure/Effect gating. | `Ara3D.DataFlowEngine` |
-| [expressions](expressions/expressions.md) | 0.1.0 | The expression language for derive/filter/what-if nodes: grammar, precedence, static typing, null propagation, builtins. | `Ara3D.DataFlowEngine.Expressions` |
+| [expressions](expressions/expressions.md) | 0.3.0 | The expression language for derive/filter/what-if nodes: grammar, precedence, static typing, null propagation, builtins. | `Ara3D.DataFlowEngine.Expressions` |
 | [runs](runs/runs.md) | 0.1.0 | The run record: frozen evaluation (graph hash + input hashes + output hashes + outputs + timestamp), replay. Signing is a v0.x placeholder. | `Ara3D.DataFlowEngine.Runs` |
 
 Reading order for newcomers: format → semantics → expressions → runs. The

@@ -38,6 +38,7 @@ public static class TypeChecker
                 Binary b => CheckBinary(b),
                 Conditional c => CheckConditional(c),
                 Call c => CheckCall(c),
+                InList l => CheckInList(l),
                 _ => throw new ArgumentException($"Unknown expression node {expr.GetType().Name}"),
             };
 
@@ -102,10 +103,7 @@ public static class TypeChecker
 
         private ScalarType? CheckEquality(Binary b, TypedExpr left, TypedExpr right)
         {
-            var ok = left.Type == null || right.Type == null
-                || left.Type == right.Type
-                || (left.Type.Value.IsNumeric() && right.Type.Value.IsNumeric());
-            if (!ok)
+            if (!Comparable(left.Type, right.Type))
                 Error(b.Position, $"Cannot compare {left.Type} and {right.Type} with '{b.Op.Text()}'");
             return ScalarType.Boolean;
         }
@@ -153,6 +151,19 @@ public static class TypeChecker
             if (operand.Type is { } t && t != ScalarType.Boolean)
                 Error(operand.Position, $"Operator '{b.Op.Text()}' requires Boolean operands, not {t}");
         }
+
+        private TypedExpr CheckInList(InList l)
+        {
+            var value = Check(l.Value);
+            var items = l.Items.Select(Check).ToList();
+            foreach (var item in items)
+                if (!Comparable(value.Type, item.Type))
+                    Error(item.Position, $"Cannot compare {value.Type} with an 'in' item of type {item.Type}");
+            return new TypedInList(l.Position, value, items, l.Negated);
+        }
+
+        private static bool Comparable(ScalarType? a, ScalarType? b)
+            => a == null || b == null || a == b || (a.Value.IsNumeric() && b.Value.IsNumeric());
 
         private TypedExpr CheckConditional(Conditional c)
         {
@@ -230,6 +241,9 @@ public static class TypeChecker
                         TextArg(c, args[0]);
                         TextArg(c, args[1]);
                     }
+                    return ScalarType.Boolean;
+                case Builtin.IsNull:
+                    Arity(c, args, 1, 1);
                     return ScalarType.Boolean;
                 case Builtin.ToNumber:
                     if (Arity(c, args, 1, 1))

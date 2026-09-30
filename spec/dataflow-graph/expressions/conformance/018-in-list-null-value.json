@@ -1,0 +1,15 @@
+{
+  "part": "expressions",
+  "case": "018-in-list-null-value",
+  "description": "A null value on the left of in (or not in) yields null, per the blanket null rule; a filter on it drops the row.",
+  "input": {
+    "expression": "category not in ('IFCDOOR')",
+    "environment": {
+      "category": { "type": "Text", "value": { "kind": "Text", "value": null } }
+    }
+  },
+  "expect": {
+    "type": "Boolean",
+    "value": { "kind": "Boolean", "value": null }
+  }
+}

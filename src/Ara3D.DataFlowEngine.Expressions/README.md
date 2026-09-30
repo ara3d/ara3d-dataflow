@@ -9,15 +9,18 @@ elaborated in `spec/dataflow-graph/expressions/expressions.md`. Highlights:
 
 - Literals: `true`/`false`, Int64 integers, IEEE doubles, `'text'`/`"text"`, `null`.
 - Identifiers: bare (`[A-Za-z_][A-Za-z0-9_]*`) or bracket-quoted (`[Fire Rating]`,
-  `]]` escapes `]`). Keywords (`and or not true false null`) are lowercase,
+  `]]` escapes `]`). Keywords (`and or not in true false null`) are lowercase,
   case-sensitive, and not usable as bare identifiers.
 - Precedence (high to low): unary `-`/`not`; `* / %`; `+ -`; `&` (text concat);
-  comparisons; `and`; `or`; `?:` (right-assoc). Binary operators left-assoc.
+  comparisons and `in`/`not in`; `and`; `or`; `?:` (right-assoc). Binary operators left-assoc.
 - Static typing: `+ - *` Integer if both Integer else Number; `/` always Number;
   `%` Integer only; Integer widens to Number. Null propagates through every
-  operator; `coalesce` returns the first non-null argument.
+  operator; `isnull(x)` tests for a missing value and `coalesce` returns the
+  first non-null argument.
+- Membership: `x in ('a', 'b')` and `x not in (1, 2)` take non-null literal items,
+  so the result is null only when `x` is null, as SQL `IN` behaves.
 - Builtins: `abs min max round floor ceil len lower upper contains startswith
-  endswith coalesce toNumber`. `toNumber(text)` is the one text-to-number
+  endswith coalesce toNumber isnull`. `toNumber(text)` is the one text-to-number
   conversion; it yields null when the text does not parse.
 
 Usage: `Expression.Parse(text).Check(environment).Eval(lookup)`. Parse and type

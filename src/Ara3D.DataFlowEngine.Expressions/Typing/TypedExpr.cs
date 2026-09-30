@@ -14,3 +14,4 @@ public sealed record TypedUnary(int Position, ScalarType? Type, UnaryOp Op, Type
 public sealed record TypedBinary(int Position, ScalarType? Type, BinaryOp Op, TypedExpr Left, TypedExpr Right) : TypedExpr(Position, Type);
 public sealed record TypedConditional(int Position, ScalarType? Type, TypedExpr Condition, TypedExpr WhenTrue, TypedExpr WhenFalse) : TypedExpr(Position, Type);
 public sealed record TypedCall(int Position, ScalarType? Type, Builtin Builtin, IReadOnlyList<TypedExpr> Args) : TypedExpr(Position, Type);
+public sealed record TypedInList(int Position, TypedExpr Value, IReadOnlyList<TypedExpr> Items, bool Negated) : TypedExpr(Position, ScalarType.Boolean);
