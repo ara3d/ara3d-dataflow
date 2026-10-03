@@ -1,5 +1,7 @@
 # Ara3D DataFlow
 
+**[Live page](https://ara3d.github.io/ara3d-dataflow/)**: the model in one page (graphs, nodes, value kinds, purity, Run, run records) and the specification's conformance vectors stepped through in the browser, node by node. The engine is .NET and does not run there; every count, output, and hash on the page is read from the vectors that the C# engine must pass ([screenshot](docs/images/pages-home.png)). The page is built by `node site/build.mjs` and deployed by `.github/workflows/pages.yml`, which needs Pages set to "GitHub Actions" under Settings > Pages.
+
 A dataflow engine for .NET whose answers can be reproduced and checked by
 someone else, plus the written specification that defines what "correct" means.
 A graph of nodes computes tables and scalar values from its inputs. The engine
