@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ara3D DataFlow</title>
+  <meta name="description" content="A specified dataflow engine for .NET: graphs, nodes, value kinds, purity, Run, and run records, with the specification's conformance vectors stepped through in the browser." />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@600;700&family=Public+Sans:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1 class="wordmark">Ara3D DataFlow</h1>
+    <span class="family">Part of the <a href="https://ara3d.github.io/bim-open-toolkit/">BIM Open family</a></span>
+  </header>
+
+  <p class="lead">A dataflow engine for .NET whose answers can be reproduced and checked by someone else, and the written specification that defines what a correct answer is. A graph of nodes computes tables and values from its inputs; the same graph over the same inputs always gives the same outputs, nothing is written to the outside world until someone asks for a Run, and a Run freezes into a record that anyone with the engine can replay. It is for developers building tools whose answers have to be defended later: compliance checks, quantity takeoffs, reconciliations, audits. Nothing in it knows about buildings.</p>
+  <p class="links"><a href="https://github.com/ara3d/ara3d-dataflow">Source and README on GitHub</a> &middot; <a href="https://github.com/ara3d/ara3d-dataflow/tree/main/spec/dataflow-graph">The specification</a></p>
+
+  <section>
+    <h2>The model</h2>
+    <div class="cards">
+      <article>
+        <h3>Graph</h3>
+        <p>A JSON document (<code>.dfg.json</code>) in four layers. <code>structure</code> (nodes and edges) and <code>values</code> (parameters) decide what is computed; <code>layout</code> and <code>session</code> are canvas state. The graph hash is SHA-256 over the first two only, so moving a node never changes what the graph means. Cycles are invalid.</p>
+        <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/format/format.md">format part</a></p>
+      </article>
+      <article>
+        <h3>Nodes</h3>
+        <p>A node names a kind and a version, such as <code>test.add</code> version 1, and declares typed input and output ports and parameters. Its outputs depend only on its kind, version, parameters, and inputs: no clock, no randomness, no ambient files. That is what makes memoization sound and replay a yes-or-no question.</p>
+        <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/semantics/semantics.md">semantics part, sections 2 to 5</a></p>
+      </article>
+      <article>
+        <h3>Value kinds</h3>
+        <p>Edges carry six kinds: <code>Boolean</code>, <code>Integer</code> (64-bit), <code>Number</code> (double), <code>Text</code>, <code>Table</code> (named, typed columns), and <code>Relation</code> (a query plan identified by its text). Kinds must match at an edge unless one side is <code>Any</code>; nothing converts. Null exists only inside table cells and expressions. Every value has a content hash.</p>
+        <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/semantics/semantics.md">semantics part, section 1</a></p>
+      </article>
+      <article>
+        <h3>Purity</h3>
+        <p>Every node is <code>Pure</code> or <code>Effect</code>. Pure nodes evaluate on every edit and are memoized by kind, version, parameters, and input hashes, so an unchanged branch executes nothing. Effect nodes, the ones that write files, never execute during ordinary evaluation; they report <code>EffectPending</code>. Looking at a graph is therefore always safe.</p>
+        <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/semantics/semantics.md">semantics part, section 6</a></p>
+      </article>
+      <article>
+        <h3>Run</h3>
+        <p>A Run is an explicit request to change the world. It brings every Pure node up to date, then executes each reachable Effect node exactly once, in topological order with ties broken by node id, so the order of writes is reproducible too. Effects already done are not rolled back if a later one fails.</p>
+        <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/semantics/semantics.md">semantics part, section 6</a></p>
+      </article>
+      <article>
+        <h3>Run records</h3>
+        <p>A finished Run freezes into a <code>.run.json</code> record: the graph hash, the content hash of every external input, the hash of every node output, the terminal outputs in full, the effects in order, a timestamp, and the engine version. Replay checks the graph and inputs, recomputes without effects, and names the first node that diverges.</p>
+        <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/runs/runs.md">runs part</a></p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Step through the conformance vectors</h2>
+    <p class="note"><b>What you are looking at.</b> The engine is a .NET library and has no browser build, so this page does not run it. Every graph, step, execution count, effect order, output, and hash below is read verbatim from a conformance vector in <code>spec/dataflow-graph</code>, the files the specification uses to define correct behaviour. The C# engine's conformance suite (<code>tests/Ara3D.DataFlowEngine.Conformance</code>) runs each vector and fails if the engine disagrees. The only things this page adds are the drawing and the <i>pending</i> label on an Effect node outside a Run, which the specification's section 6 implies.</p>
+
+    <div class="viewer">
+      <nav id="vector-list" aria-label="Conformance vectors"></nav>
+      <div class="stage">
+        <h3 id="v-title"></h3>
+        <p id="v-desc" class="dim"></p>
+        <div id="v-steps" class="steps" role="tablist" aria-label="Steps"></div>
+        <div class="graph-wrap"><svg id="v-graph" role="img" aria-label="Graph drawing"></svg></div>
+        <div class="legend">
+          <span><i class="sw ran"></i>executed in this step</span>
+          <span><i class="sw idle"></i>not executed (memo hit or clean)</span>
+          <span><i class="sw pending"></i>Effect node, pending outside a Run</span>
+        </div>
+        <div id="v-detail"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Expressions</h2>
+    <p>Derive, filter, and what-if nodes use a small, statically typed expression language: arithmetic, comparison, <code>&amp;</code> for text, the <code>? :</code> conditional, <code>coalesce</code>, <code>in</code>, and a few builtins. A null operand makes the result null, except in <code>coalesce</code> and <code>isnull</code>, which exist to test for it. The expected results below come from the expressions part's vectors (<span id="expr-version"></span>).</p>
+    <div class="table-wrap"><table id="expr-table">
+      <thead><tr><th>Case</th><th>Expression</th><th>Environment</th><th>Expected</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Document validity</h2>
+    <p>The format part's vectors say which documents are valid, and pin a graph hash for the ones that are.</p>
+    <div class="table-wrap"><table id="format-table">
+      <thead><tr><th>Case</th><th>What it checks</th><th>Expected</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Use it</h2>
+    <p>The engine targets .NET and is built from source for now: clone the repository and run <code>dotnet test Ara3D.DataFlow.slnx</code> to build it and run the conformance suite. The <a href="https://github.com/ara3d/ara3d-dataflow#readme">README</a> shows the C# API, and the <a href="https://github.com/ara3d/ara3d-dataflow/tree/main/spec/dataflow-graph">specification</a> is the place to start for a second implementation.</p>
+  </section>
+
+  <footer>MIT licensed &middot; <a href="https://github.com/ara3d/ara3d-dataflow">github.com/ara3d/ara3d-dataflow</a></footer>
+</main>
+<script src="vectors.js"></script>
+<script src="site.js"></script>
+</body>
+</html>

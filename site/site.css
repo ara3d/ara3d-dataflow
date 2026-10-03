@@ -1,0 +1,82 @@
+/* BIM Open family type and neutrals (bim-open-toolkit docs/BRANDING.md).
+   Ara3D DataFlow is a general library: no mark or accent of its own. */
+:root {
+  --font-brand: "Instrument Sans", "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Fira Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --text: #171a1f; --dim: #5a606c; --surface: #ffffff; --bg: #f4f5f7;
+  --border: #e3e6ea; --edge: #cfd4db;
+  --ok: #16a34a; --ok-soft: #e7f6ec; --pending: #d97706; --pending-soft: #fdf1e2; --error: #dc2626;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #e8eaee; --dim: #9aa1ad; --surface: #1d2027; --bg: #15171c;
+    --border: #2a2e37; --edge: #3a3f4a; --ok-soft: #173322; --pending-soft: #3a2a12;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--font-ui); }
+main { max-width: 1040px; margin: 0 auto; padding: 40px 16px 64px; }
+a { color: var(--text); }
+code { font: 0.88em var(--font-mono); }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.wordmark { font: 700 28px var(--font-brand); letter-spacing: -0.2px; margin: 0; }
+.family, .family a { font-size: 13px; color: var(--dim); }
+.lead { max-width: 75ch; margin: 12px 0 8px; }
+.links { font-size: 14px; margin: 0 0 8px; }
+h2 { font: 600 20px var(--font-brand); margin: 40px 0 12px; }
+h3 { font: 600 16px var(--font-brand); margin: 0 0 6px; }
+.dim, .ref, .ref a { color: var(--dim); }
+.ref { font-size: 13px; margin: 8px 0 0; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 900px) { .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+.cards article { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; font-size: 14px; }
+.cards p { margin: 0; }
+.note { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--pending); border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+
+.viewer { display: grid; grid-template-columns: 220px 1fr; gap: 12px; margin-top: 12px; }
+@media (max-width: 760px) { .viewer { grid-template-columns: 1fr; } }
+#vector-list { display: flex; flex-direction: column; gap: 4px; }
+#vector-list .part { font: 600 12px var(--font-ui); color: var(--dim); text-transform: uppercase; letter-spacing: 0.6px; margin: 8px 0 2px; }
+#vector-list button { text-align: left; font: 13px var(--font-mono); padding: 6px 10px; border-radius: 6px; border: 1px solid transparent;
+  background: transparent; color: var(--text); cursor: pointer; }
+#vector-list button:hover { border-color: var(--edge); }
+#vector-list button[aria-selected="true"] { background: var(--surface); border-color: var(--edge); font-weight: 500; }
+.stage { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; min-width: 0; }
+.stage h3 { font-family: var(--font-mono); font-weight: 500; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.steps button { font: 13px var(--font-mono); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--edge);
+  background: var(--bg); color: var(--text); cursor: pointer; }
+.steps button[aria-selected="true"] { background: var(--text); color: var(--surface); border-color: var(--text); }
+.graph-wrap { overflow-x: auto; }
+#v-graph { display: block; max-width: 100%; height: auto; }
+#v-graph .node rect { fill: var(--surface); stroke: var(--edge); stroke-width: 1.2; }
+#v-graph .node.ran rect { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.8; }
+#v-graph .node.pending rect { fill: var(--pending-soft); stroke: var(--pending); stroke-dasharray: 4 3; }
+#v-graph .node .id { font: 600 13px var(--font-mono); fill: var(--text); }
+#v-graph .node .kind, #v-graph .node .param { font: 11px var(--font-mono); fill: var(--dim); }
+#v-graph .node .badge { font: 500 11px var(--font-ui); fill: var(--dim); }
+#v-graph .node.ran .badge { fill: var(--ok); }
+#v-graph .node.pending .badge { fill: var(--pending); }
+#v-graph .edge { fill: none; stroke: var(--edge); stroke-width: 1.6; }
+#v-graph .port { font: 10px var(--font-mono); fill: var(--dim); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--dim); margin: 6px 0 10px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; border: 1.5px solid var(--edge); background: var(--surface); }
+.sw.ran { border-color: var(--ok); background: var(--ok-soft); }
+.sw.pending { border-color: var(--pending); background: var(--pending-soft); border-style: dashed; }
+#v-detail dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0; font-size: 14px; }
+#v-detail dt { color: var(--dim); }
+#v-detail dd { margin: 0; font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; overflow-x: auto;
+  font: 12px/1.5 var(--font-mono); margin: 8px 0 0; }
+.ok { color: var(--ok); } .bad { color: var(--error); }
+
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--dim); }
+tr:last-child td { border-bottom: 0; }
+td code { font-size: 12px; white-space: pre-wrap; }
+footer { margin-top: 40px; font-size: 13px; color: var(--dim); }
+footer a { color: var(--dim); }

@@ -4,3 +4,6 @@ artifacts/
 *.user
 .vs/
 TestResults/
+
+# GitHub Pages build output (node site/build.mjs)
+_site/
