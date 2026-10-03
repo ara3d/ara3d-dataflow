@@ -189,8 +189,8 @@ execute during ordinary evaluation. Outside a Run they report `EffectPending`,
 their inputs are computed and exposed, and their downstream is unavailable. A
 Run first brings every Pure node up to date, then executes each reachable
 Effect node exactly once in topological order with ties broken by node id.
-The library implements the gating. The Run driver that executes the pending
-effects is not yet part of it; see the status section.
+The library implements both the gating and the driver: `EvalSession.Run`
+executes the pending effects (semantics section 6).
 
 **Why.** An editor evaluates a graph on every keystroke. If a node that writes
 a CSV could run during that, editing would spray files across the disk. Gating
@@ -291,7 +291,7 @@ language grow without touching the document format.
 
 ### 7. The node contract is tiny and stable
 
-`Ara3D.DataFlowEngine.Abstractions` is 297 lines. It defines the five value
+`Ara3D.DataFlowEngine.Abstractions` is 319 lines. It defines the six value
 kinds, port and parameter descriptors, the node specification, the evaluation
 context, the node interface, and the registry. Every node pack and the engine
 compile against it and nothing else.
@@ -306,7 +306,7 @@ many people, or many agents, write nodes in parallel without coordinating.
   validation. Convenient, and every helper is a future breaking change.
   Helpers live in the packs instead.
 - *Generic or structural port types* such as "a table with these columns".
-  Deferred. Ports are the five kinds plus `Any`, and nodes validate table
+  Deferred. Ports are the six kinds plus `Any`, and nodes validate table
   shape at evaluation time.
 
 ### 8. Documents are immutable values
@@ -400,9 +400,11 @@ unchanged and they all hit the cache.
 
 ### Values and hashing
 
-Five kinds flow along edges: Boolean, Integer (64-bit), Number (IEEE double),
-Text, and Table. A table has ordered named columns of one scalar kind each, and
-cells may be null. Ports are the five kinds plus `Any`. `ValueHash.Compute`
+Six kinds flow along edges: Boolean, Integer (64-bit), Number (IEEE double),
+Text, Table, and Relation. A table has ordered named columns of one scalar kind
+each, and cells may be null. A relation is a logical plan in canonical text plus
+its content hash, identified by the plan and never by rows (semantics part,
+section 1). Ports are the six kinds plus `Any`. `ValueHash.Compute`
 implements the encoding from the semantics part, section 1.1, and returns 64
 lowercase hex characters.
 
@@ -426,7 +428,7 @@ the first `OutputMismatch` by node and port.
 Expression-kind parameters hold a small statically typed language over the
 scalar kinds: literals, bare or `[bracket quoted]` identifiers bound to the
 columns of a row, arithmetic, `&` for text concatenation, comparisons, `and`,
-`or`, `not`, a right-associative conditional, and thirteen builtins from `abs`
+`or`, `not`, a right-associative conditional, and fifteen builtins from `abs`
 to `coalesce`. Integer division always yields a Number. Integer overflow is a
 deterministic evaluation error, never a wrap. The pipeline is
 `Expression.Parse(text).Check(environment).Eval(lookup)`; parse and type
@@ -544,27 +546,26 @@ var verdict = RunReplay.Replay(RunRecordJson.Load("analysis.run.json"), doc, reg
   reproduce .NET's round-trip double formatting exactly or its graph hashes
   will differ.
 
-## Status on 2026-09-16
+## Status on 2026-10-03
 
 The code was written from 2026-08-31 inside BIM Open Toolkit and moved into
 this repository on 2026-09-15. Every spec part is version 0.1.0 and marked
-Draft. The seven source projects total about 4,100 lines of C#.
+Draft. The seven source projects total about 4,300 lines of C#.
 
-**Tested.** `dotnet test` on 2026-09-16 with .NET 8, from the submodule
-checkout inside BIM Open Toolkit: 609 tests passed, 0 failed, 3 skipped. The suites cover the document format (44 tests), the
-evaluator (74), the expression language (422), run records (24), the test kit
-(24), migrations (9), and the conformance runner (12 run, 3 skipped). The 28
-conformance vectors in `spec/` all execute: 8 format, 4 semantics, 14
+**Tested.** `dotnet test` on 2026-10-03 with .NET 8, from the submodule
+checkout inside BIM Open Toolkit: 690 tests passed, 0 failed, 3 skipped. The suites cover the document format (44 tests), the
+evaluator (87), the expression language (488), run records (26), the test kit
+(24), migrations (9), and the conformance runner (12 run, 3 skipped). The 33
+conformance vectors in `spec/` all execute: 8 format, 4 semantics, 19
 expressions (run from the expressions test project), and 2 runs. The three
 skips are the conformance runner's own placeholders, described next.
 
 **Specified but not implemented.**
 
-- *No Run driver in the engine.* `EvalSession` never executes Effect nodes.
-  The only code that does is a private driver inside the conformance test
-  `SemanticsVectorTests`, which exists so the effect-gating vectors can run.
-  `RunRecorder.Freeze` records whatever snapshot it is given, so a host that
-  calls it after ordinary evaluation records a run in which no effect ran.
+- *Freeze does not drive a Run.* `EvalSession.Run` executes the Effect nodes
+  and the conformance harness delegates to it, but `RunRecorder.Freeze` records
+  whatever snapshot it is given, so a host that calls it after ordinary
+  evaluation records a run in which no effect ran. The host calls `Run` first.
 - *Replay skips Effect node outputs.* The spec says replay recomputes them as
   pure functions. `RunReplay` cannot yet, and skips them.
 - *The runs conformance runner* verifies the frozen graph and value hashes,
