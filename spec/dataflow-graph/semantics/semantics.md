@@ -11,7 +11,7 @@ Normative words (MUST, MUST NOT, SHOULD, MAY) follow RFC 2119.
 
 ## 1. Values
 
-Edges carry values of exactly six kinds:
+Edges carry values of exactly seven kinds:
 
 | Kind | Definition |
 |---|---|
@@ -21,10 +21,15 @@ Edges carry values of exactly six kinds:
 | Text | a sequence of Unicode code points |
 | Table | ordered named columns, each a typed cell sequence of equal length |
 | Relation | a logical plan in canonical text plus its content hash; rows exist only once an executor runs it |
+| Database | a database file: its path plus the content hash of the file; a resource handle, not rows |
 
 A Relation is identified by its plan, never by rows. Two relations are equal
 when their canonical texts are equal, and materializing one is the executor's
 concern, outside this specification.
+
+A Database is identified by the content hash of the file, never by its path or
+any open connection a host keeps for it. A changed file is a new value, so
+caching and run replay see the change.
 
 A Table column has a name (unique within the table, order significant) and a
 column kind — Boolean, Integer, Number, or Text (no nested tables in v0.1).
@@ -32,7 +37,7 @@ Cells are values of the column kind or null. **Null exists only inside table
 cells and inside expression evaluation (see the expressions part); an edge
 never carries a bare null.**
 
-Port types are the six kinds plus `Any`. `Any` accepts every kind.
+Port types are the seven kinds plus `Any`. `Any` accepts every kind.
 There is no conversion at an edge: unless one side is `Any`, the kinds must
 match exactly, and a value arrives bit-identical to how it left. Integer →
 Number widening at edges is deliberately deferred; the expression language
@@ -54,6 +59,7 @@ algorithm-agility field can come with signing later). `enc` is:
 - Text — byte `0x04`, then 8 bytes little-endian byte length, then the
   UTF-8 bytes. Code points are hashed exactly; no Unicode normalization.
 - Relation — byte `0x06`, then the plan hash as Text (with its tag).
+- Database — byte `0x07`, then the file's content hash as Text (with its tag).
 - Table — byte `0x05`, then 8 bytes little-endian column count, then per
   column in table order: the column name (Text encoding, with its tag), one
   column-kind tag byte (`0x01` Boolean, `0x02` Integer, `0x03` Number,

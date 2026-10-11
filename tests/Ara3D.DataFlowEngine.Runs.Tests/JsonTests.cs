@@ -144,3 +144,21 @@ public class RelationJsonTests
         Assert.That(((RelationValue)read).Payload, Is.Null);
     }
 }
+
+[TestFixture]
+public class DatabaseJsonTests
+{
+    [Test]
+    public void Database_round_trips_as_path_and_hash()
+    {
+        var original = new DatabaseValue("a.duckdb", "abc123", Payload: new object());
+        using var stream = new MemoryStream();
+        using (var writer = new System.Text.Json.Utf8JsonWriter(stream))
+            ValueJson.Write(writer, original);
+        using var doc = System.Text.Json.JsonDocument.Parse(stream.ToArray());
+        var read = ValueJson.Read(doc.RootElement);
+        Assert.That(read, Is.EqualTo(original));
+        Assert.That(((DatabaseValue)read).Path, Is.EqualTo("a.duckdb"));
+        Assert.That(((DatabaseValue)read).Payload, Is.Null);
+    }
+}

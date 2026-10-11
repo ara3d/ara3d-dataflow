@@ -14,6 +14,9 @@ public enum ValueKind
     /// executor materializes the plan.</summary>
     Relation,
 
+    /// <summary>A database file: a resource handle named by its path and identified by its content hash.</summary>
+    Database,
+
     /// <summary>Not a wire value: the placeholder for an unconnected optional input.</summary>
     Missing,
 }
@@ -65,6 +68,22 @@ public sealed record RelationValue(string Text, string Hash, object? Payload = n
 
     public override int GetHashCode()
         => System.HashCode.Combine(Text, Hash);
+}
+
+/// <summary>
+/// A database file as a resource. Identity is the file's content hash, so a changed file is a
+/// new value; Path says where to open it and Payload is an optional in-process handle (an open
+/// connection or cache entry) that is never part of identity.
+/// </summary>
+public sealed record DatabaseValue(string Path, string Hash, object? Payload = null) : FlowValue
+{
+    public override ValueKind Kind => ValueKind.Database;
+
+    public bool Equals(DatabaseValue? other)
+        => other is not null && Hash == other.Hash;
+
+    public override int GetHashCode()
+        => Hash.GetHashCode();
 }
 
 /// <summary>

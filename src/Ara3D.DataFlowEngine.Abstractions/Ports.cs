@@ -8,6 +8,7 @@ public enum PortType
     Text,
     Table,
     Relation,
+    Database,
     Any,
 }
 
@@ -30,6 +31,7 @@ public static class PortTypeExtensions
             PortType.Text => value == ValueKind.Text,
             PortType.Table => value == ValueKind.Table,
             PortType.Relation => value == ValueKind.Relation,
+            PortType.Database => value == ValueKind.Database,
             _ => false,
         };
 }

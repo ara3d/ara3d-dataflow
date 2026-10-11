@@ -38,6 +38,7 @@ public static class ValueHash
             case TextValue t: WriteText(w, t.Value); break;
             case TableValue t: WriteTable(w, t.Table); break;
             case RelationValue r: WriteRelation(w, r); break;
+            case DatabaseValue d: WriteDatabase(w, d); break;
             default: throw new ArgumentException($"Unknown flow value type {value.GetType().Name}");
         }
     }
@@ -73,6 +74,13 @@ public static class ValueHash
     {
         w.Write((byte)0x06);
         WriteText(w, relation.Hash);
+    }
+
+    /// <summary>A database's identity is its content hash; the path and any open handle are not part of it.</summary>
+    private static void WriteDatabase(BinaryWriter w, DatabaseValue database)
+    {
+        w.Write((byte)0x07);
+        WriteText(w, database.Hash);
     }
 
     private static void WriteTable(BinaryWriter w, IDataTable table)

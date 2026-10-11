@@ -306,7 +306,7 @@ many people, or many agents, write nodes in parallel without coordinating.
   validation. Convenient, and every helper is a future breaking change.
   Helpers live in the packs instead.
 - *Generic or structural port types* such as "a table with these columns".
-  Deferred. Ports are the six kinds plus `Any`, and nodes validate table
+  Deferred. Ports are the seven kinds plus `Any`, and nodes validate table
   shape at evaluation time.
 
 ### 8. Documents are immutable values
@@ -400,11 +400,12 @@ unchanged and they all hit the cache.
 
 ### Values and hashing
 
-Six kinds flow along edges: Boolean, Integer (64-bit), Number (IEEE double),
-Text, Table, and Relation. A table has ordered named columns of one scalar kind
+Seven kinds flow along edges: Boolean, Integer (64-bit), Number (IEEE double),
+Text, Table, Relation, and Database. A table has ordered named columns of one scalar kind
 each, and cells may be null. A relation is a logical plan in canonical text plus
 its content hash, identified by the plan and never by rows (semantics part,
-section 1). Ports are the six kinds plus `Any`. `ValueHash.Compute`
+section 1). A database is a file's path plus its content hash, identified by the
+hash alone. Ports are the seven kinds plus `Any`. `ValueHash.Compute`
 implements the encoding from the semantics part, section 1.1, and returns 64
 lowercase hex characters.
 

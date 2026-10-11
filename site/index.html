@@ -36,7 +36,7 @@
       </article>
       <article>
         <h3>Value kinds</h3>
-        <p>Edges carry six kinds: <code>Boolean</code>, <code>Integer</code> (64-bit), <code>Number</code> (double), <code>Text</code>, <code>Table</code> (named, typed columns), and <code>Relation</code> (a query plan identified by its text). Kinds must match at an edge unless one side is <code>Any</code>; nothing converts. Null exists only inside table cells and expressions. Every value has a content hash.</p>
+        <p>Edges carry seven kinds: <code>Boolean</code>, <code>Integer</code> (64-bit), <code>Number</code> (double), <code>Text</code>, <code>Table</code> (named, typed columns), <code>Relation</code> (a query plan identified by its text), and <code>Database</code> (a database file identified by its content hash). Kinds must match at an edge unless one side is <code>Any</code>; nothing converts. Null exists only inside table cells and expressions. Every value has a content hash.</p>
         <p class="ref"><a href="https://github.com/ara3d/ara3d-dataflow/blob/main/spec/dataflow-graph/semantics/semantics.md">semantics part, section 1</a></p>
       </article>
       <article>

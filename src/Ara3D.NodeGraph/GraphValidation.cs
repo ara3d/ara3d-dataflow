@@ -98,6 +98,7 @@ public static class GraphValidation
             PortType.Text => ValueKind.Text,
             PortType.Table => ValueKind.Table,
             PortType.Relation => ValueKind.Relation,
+            PortType.Database => ValueKind.Database,
             _ => throw new ArgumentOutOfRangeException(nameof(type)),
         };
 

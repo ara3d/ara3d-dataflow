@@ -40,6 +40,10 @@ internal static class ValueJson
                 w.WriteString("text", r.Text);
                 w.WriteString("hash", r.Hash);
                 break;
+            case DatabaseValue d:
+                w.WriteString("path", d.Path);
+                w.WriteString("hash", d.Hash);
+                break;
             default:
                 throw new ArgumentException($"Cannot serialize flow value of type {value.GetType().Name}");
         }
@@ -61,6 +65,9 @@ internal static class ValueJson
             "Relation" => new RelationValue(
                 e.GetProperty("text").GetString() ?? throw new FormatException("Relation 'text' must be a string"),
                 e.GetProperty("hash").GetString() ?? throw new FormatException("Relation 'hash' must be a string")),
+            "Database" => new DatabaseValue(
+                e.GetProperty("path").GetString() ?? throw new FormatException("Database 'path' must be a string"),
+                e.GetProperty("hash").GetString() ?? throw new FormatException("Database 'hash' must be a string")),
             _ => throw new FormatException($"Unknown serialized value kind '{kind}'"),
         };
     }
