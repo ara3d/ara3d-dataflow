@@ -362,6 +362,14 @@ saving a canonical file reproduces it byte for byte. The graph hash is SHA-256
 over the canonical text of `{"structure": ..., "values": ...}` without the
 trailing newline.
 
+A graph can declare **inputs** in `structure.inputs`: a name, a kind
+(`FilePath`, `Text`, `Number`, `Integer`, `Boolean`), a default, and a
+description. A parameter value written `$name` refers to an input (`$$` at the
+start escapes a literal dollar sign). The evaluator takes an optional map of
+input values, substitutes them before the nodes run, and so the memo key and
+the run record see the resolved text. Swapping the model of a graph is then one
+value, not an edit to every reader.
+
 `Ara3D.NodeGraph` implements loading, saving, hashing, editing, undo, and
 validation. Validation against a node registry reports duplicate ids, unknown
 kinds, dangling edge endpoints, unknown ports, incompatible port types, two
@@ -419,7 +427,8 @@ lowercase hex characters.
 topological order, records every `Ok` node's output hashes, embeds the full
 value of every output port that has no outgoing edge, and lists executed
 Effect nodes with their status. The caller supplies the external input
-descriptors, the engine version string, and the timestamp, because the engine
+descriptors, the engine version string, and the timestamp (the record also
+pins the snapshot's resolved graph-input values), because the engine
 has no clock and no I/O. The record serializes with the same canonical JSON
 rules as a graph, so it is itself hashable and diffable.
 
@@ -443,7 +452,9 @@ errors are collected with character offsets rather than thrown.
 
 `GraphMigrator.MigrateToCurrent` reads `formatVersion`, chains registered
 `IGraphMigration` steps to the current version, and returns canonical text. The
-production registry is empty because 0.1.0 is the first format. The mechanism
+production registry is empty because 0.1.0 is the first format. Graph inputs
+(2026-10-11) are an additive optional member: no version bump, no migration,
+and a document without `inputs` is unchanged. The mechanism
 is exercised by tests with fake migrations.
 
 ## Using it
@@ -516,6 +527,14 @@ var session = new EvalSession(registry);
 using var subscription = session.Subscribe("n1", r => Console.WriteLine(r.Status));
 session.SetDocument(doc);
 session.UpdateDocument(d => d.SetParam("n1", "factor", "3"));
+```
+
+With graph inputs, pass the values and read back what was used:
+
+```csharp
+var snapshot = doc.Evaluate(registry, new Dictionary<string, string> { ["model"] = "b.duckdb" });
+snapshot.GraphInputs["model"];            // the resolved value of every declared input
+session.SetGraphInputs(new Dictionary<string, string> { ["model"] = "c.duckdb" });  // re-evaluates
 ```
 
 ### Recording a run

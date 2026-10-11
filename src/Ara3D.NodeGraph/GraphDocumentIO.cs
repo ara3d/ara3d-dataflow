@@ -49,9 +49,12 @@ public static class GraphDocumentIO
         if (values is null)
             throw new FormatException("Missing required 'values' layer");
 
-        var (nodes, edges) = ReadStructure(structure.Value);
+        var (nodes, edges, inputs) = ReadStructure(structure.Value);
         return new GraphDocument(nodes, edges, ReadValues(values.Value),
-            layout is null ? new Dictionary<string, NodeLayout>() : ReadLayout(layout.Value), session);
+            layout is null ? new Dictionary<string, NodeLayout>() : ReadLayout(layout.Value), session)
+        {
+            Inputs = inputs,
+        };
     }
 
     public static void Save(this GraphDocument doc, string filePath)
@@ -105,6 +108,8 @@ public static class GraphDocumentIO
             w.WriteEndObject();
         }
         w.WriteEndArray();
+        if (doc.Inputs.Count > 0)
+            WriteInputs(w, doc.Inputs);
         w.WritePropertyName("nodes");
         w.WriteStartArray();
         foreach (var n in doc.Nodes.OrderBy(n => n.Id, StringComparer.Ordinal))
@@ -117,6 +122,23 @@ public static class GraphDocumentIO
         }
         w.WriteEndArray();
         w.WriteEndObject();
+    }
+
+    private static void WriteInputs(Utf8JsonWriter w, IReadOnlyList<GraphInput> inputs)
+    {
+        w.WritePropertyName("inputs");
+        w.WriteStartArray();
+        foreach (var i in inputs.OrderBy(i => i.Name, StringComparer.Ordinal))
+        {
+            w.WriteStartObject();
+            w.WriteString("default", i.Default);
+            if (i.Description.Length > 0)
+                w.WriteString("description", i.Description);
+            w.WriteString("kind", i.Kind.ToString());
+            w.WriteString("name", i.Name);
+            w.WriteEndObject();
+        }
+        w.WriteEndArray();
     }
 
     private static void WriteValues(Utf8JsonWriter w, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> values)
@@ -153,14 +175,16 @@ public static class GraphDocumentIO
         w.WriteEndObject();
     }
 
-    private static (IReadOnlyList<GraphNode>, IReadOnlyList<GraphEdge>) ReadStructure(JsonElement structure)
+    private static (IReadOnlyList<GraphNode>, IReadOnlyList<GraphEdge>, IReadOnlyList<GraphInput>) ReadStructure(
+        JsonElement structure)
     {
-        JsonElement? nodesEl = null, edgesEl = null;
+        JsonElement? nodesEl = null, edgesEl = null, inputsEl = null;
         foreach (var p in structure.EnumerateObject())
             switch (p.Name)
             {
                 case "nodes": nodesEl = p.Value; break;
                 case "edges": edgesEl = p.Value; break;
+                case "inputs": inputsEl = p.Value; break;
                 default: throw new FormatException($"Unknown structure member '{p.Name}'");
             }
         if (nodesEl is null || edgesEl is null)
@@ -168,7 +192,31 @@ public static class GraphDocumentIO
 
         var nodes = nodesEl.Value.EnumerateArray().Select(ReadNode).ToList();
         var edges = edgesEl.Value.EnumerateArray().Select(ReadEdge).ToList();
-        return (nodes, edges);
+        var inputs = inputsEl is null
+            ? new List<GraphInput>()
+            : inputsEl.Value.EnumerateArray().Select(ReadInput).ToList();
+        return (nodes, edges, inputs);
+    }
+
+    private static GraphInput ReadInput(JsonElement e)
+    {
+        string? name = null, kind = null, @default = null, description = null;
+        foreach (var p in e.EnumerateObject())
+            switch (p.Name)
+            {
+                case "name": name = p.Value.GetString(); break;
+                case "kind": kind = p.Value.GetString(); break;
+                case "default": @default = p.Value.GetString(); break;
+                case "description": description = p.Value.GetString(); break;
+                default: throw new FormatException($"Unknown graph input member '{p.Name}'");
+            }
+        if (name is null || kind is null || @default is null)
+            throw new FormatException("A graph input needs 'name', 'kind' and 'default' strings");
+        if (!Enum.TryParse<Ara3D.DataFlowEngine.Abstractions.ParamKind>(kind, out var parsed)
+            || !GraphInput.AllowedKinds.Contains(parsed))
+            throw new FormatException(
+                $"Graph input '{name}' has kind '{kind}'; allowed: {string.Join(", ", GraphInput.AllowedKinds)}");
+        return new GraphInput(name, parsed, @default, description ?? "");
     }
 
     private static GraphNode ReadNode(JsonElement e)

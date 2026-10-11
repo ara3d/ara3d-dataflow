@@ -69,7 +69,7 @@ public static class RunReplay
 
     private static ReplayResult? CheckOutputs(RunRecord record, GraphDocument doc, INodeRegistry registry)
     {
-        var snapshot = doc.Evaluate(registry);
+        var snapshot = doc.Evaluate(registry, record.GraphInputs);
         foreach (var node in doc.Sort())
         {
             var result = snapshot.Results[node.Id];

@@ -52,7 +52,8 @@ A graph document is one JSON object with exactly these members:
 ```jsonc
 "structure": {
   "nodes": [ { "id": "n1", "kind": "source.model", "version": 1 } ],
-  "edges": [ { "from": "n1.out", "to": "n2.model" } ]
+  "edges": [ { "from": "n1.out", "to": "n2.model" } ],
+  "inputs": [ { "name": "model", "kind": "FilePath", "default": "a.duckdb" } ]   // optional, section 3a
 }
 ```
 
@@ -61,9 +62,55 @@ A graph document is one JSON object with exactly these members:
   `to` names an input port, or a *bindable parameter* of the target node
   (§5 rule 2): the catalog may declare a parameter as a socket, and an edge
   into the port of that name then supplies the parameter's value.
+- `inputs` - optional array of graph inputs (section 3a). Omitted when empty, so a
+  document without inputs is byte-for-byte what it was before the member
+  existed, and keeps its graph hash.
 - Port sets are declared by the node catalog for each (kind, version), not by
   the document. Port existence and type compatibility are *catalog validity*
   (§5), checked when a catalog is available.
+
+## 3a. Graph inputs
+
+A graph MAY declare **inputs**: values it takes from outside, so one change
+made by a caller (swap the model, change a threshold) reaches every node that
+uses the value, and the graph itself stays the same graph.
+
+```jsonc
+"inputs": [
+  { "name": "model", "kind": "FilePath", "default": "C:/data/a.duckdb",
+    "description": "The building to analyse" }
+]
+```
+
+- `name` - matches `[A-Za-z][A-Za-z0-9]*`; unique among the inputs.
+- `kind` - one of `FilePath`, `Text`, `Number`, `Integer`, `Boolean`, with the
+  canonical string forms of section 4.
+- `default` - required, a canonical string of that kind. Used when the caller
+  gives no value.
+- `description` - optional text for people; omitted when empty.
+- No other members. Canonical order: sorted by `name`; keys sorted as usual.
+
+**Reference form.** A parameter value in the `values` layer that is exactly
+`$name` (a dollar sign followed by an input name, and nothing else) refers
+to that input. Evaluation uses the input's value (the caller's, else the
+default) as the parameter's canonical string, before the node sees it, so the
+memo key (semantics part section 4) and every hash see the resolved text. A
+source node (`value.path` with `path: "$model"`) is the usual holder; any
+parameter MAY refer to an input, and several MAY refer to the same one.
+
+**Escape.** A value that starts with `$$` is a literal that starts with one
+dollar sign: `$$HOME` reads as `$HOME`. Any other value, including `$` alone,
+`$a b`, or a dollar sign that is not first, is literal text. A document
+written before this section that has a value that is a dollar sign followed by
+a name, or that starts with `$$`, changes meaning; write `$$` to keep the
+literal.
+
+**Validity.** Document validity gains: input names are valid and unique; each
+default is a canonical string of its kind; every reference names a declared
+input. A caller's value for an undeclared input, or a value that is not a
+canonical string of the input's kind, is rejected the same way, naming the
+input. The graph hash covers the declarations, defaults included; it does not
+cover the caller's values, which a run record pins (runs part section 2).
 
 ## 4. The `values`, `layout`, and `session` layers
 
@@ -112,6 +159,7 @@ Two levels, checked in order.
    no feedback or iteration construct in this format.
 6. Every key of `values` and `layout` names a node in `structure.nodes`.
 7. Node ids in `session.display` name nodes in `structure.nodes`.
+8. Graph inputs are well formed and every `$name` reference is declared (section 3a).
 
 **Catalog validity** — additionally, given a node catalog:
 
@@ -196,7 +244,8 @@ express them.
 `conformance/` holds numbered cases; see `conformance/README.md` in this
 directory tree's root README for the vector file format. This part ships
 vectors for: minimal valid document, unknown top-level layer, duplicate node
-id, dangling edge, duplicate input edge, node id containing a dot, cycle, and
+id, dangling edge, duplicate input edge, node id containing a dot, cycle, an
+undeclared graph input, and
 layout/session-stripped hash equivalence.
 
 ## 9. Versioning

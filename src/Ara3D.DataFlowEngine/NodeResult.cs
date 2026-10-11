@@ -42,8 +42,16 @@ public sealed record NodeResult(
 /// <summary>
 /// A consistent view of one evaluation of one document state: every result comes
 /// from the same pass. Warnings aggregate all node warnings as "nodeId: message".
+/// GraphInputs holds the value every declared graph input resolved to in this pass (the
+/// caller's, else the default); Document keeps its references as written.
 /// </summary>
 public sealed record EvalSnapshot(
     GraphDocument Document,
     IReadOnlyDictionary<string, NodeResult> Results,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    IReadOnlyDictionary<string, string>? GraphInputs = null)
+{
+    /// <summary>The document with graph-input references replaced by the values this pass used.</summary>
+    public GraphDocument ResolvedDocument()
+        => Document.WithResolvedValues(GraphInputs ?? Document.ResolveOrThrow(null));
+}

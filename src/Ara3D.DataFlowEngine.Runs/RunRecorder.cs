@@ -51,7 +51,8 @@ public static class RunRecorder
             nodeOutputs,
             recordedOutputs,
             effects,
-            snapshot.Warnings);
+            snapshot.Warnings,
+            snapshot.GraphInputs);
     }
 
     public static IReadOnlyList<RunInput> SortInputs(IReadOnlyList<RunInput> inputs)

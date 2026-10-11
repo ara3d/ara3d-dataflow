@@ -21,5 +21,9 @@ returned byte-for-byte unchanged. Newer or unreachable versions produce a
 `FormatException` with a clear message.
 
 The production registry (`GraphMigrator.Current`) is empty: format 0.1.0 is
-the first release, so there is nothing to migrate from yet. The seam is
+the first release, so there is nothing to migrate from yet. Graph inputs
+(`structure.inputs`, format part section 3a) are an additive optional member,
+omitted when empty: no version bump and no migration. The one meaning change is
+that a parameter value that is exactly `$name`, or starts with `$$`, is now a
+graph-input reference or an escape. The seam is
 proven by tests using fake migrations.

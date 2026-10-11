@@ -1,0 +1,28 @@
+{
+  "part": "format",
+  "case": "009-undeclared-graph-input-invalid",
+  "description": "A parameter value that is exactly $name refers to a graph input, and the document must declare it (format.md section 3a). Input 'model' is declared; 'other' is not.",
+  "input": {
+    "document": {
+      "formatVersion": "0.1.0",
+      "structure": {
+        "nodes": [
+          { "id": "a", "kind": "test.const", "version": 1 },
+          { "id": "b", "kind": "test.const", "version": 1 }
+        ],
+        "edges": [],
+        "inputs": [
+          { "name": "model", "kind": "Text", "default": "x" }
+        ]
+      },
+      "values": {
+        "a": { "value": "$model" },
+        "b": { "value": "$other" }
+      }
+    }
+  },
+  "expect": {
+    "valid": false,
+    "reason": "undeclared-graph-input"
+  }
+}

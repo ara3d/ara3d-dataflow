@@ -19,6 +19,8 @@ A run record is produced when a Run completes (semantics part §6). It pins:
 2. **Every external input** — by content hash. External inputs are the
    resolved contents behind `FilePath` and `ModelRef` parameters (the model,
    external CSVs, …), identified by content, never by path.
+   **Every graph input** (format part section 3a), by its resolved value: the
+   caller's value, else the default, one entry per declared input.
 3. **Every node output** — by value hash (semantics part §1.1), for every
    node that produced outputs in the Run.
 4. **Selected outputs in full** — serialized values (§3), by default every
@@ -39,6 +41,7 @@ A run record is produced when a Run completes (semantics part §6). It pins:
     { "node": "m1", "param": "path", "contentHash": "…64 lowercase hex…",
       "source": "models/tower-a.bos" }      // source is informational only
   ],
+  "graphInputs": { "model": "models/tower-a.bos" },   // only when the graph declares inputs
   "nodeOutputs": {
     "m1.out": "…64 lowercase hex…",     // "nodeId.port" -> value hash
     "sum.out": "…64 lowercase hex…"
@@ -52,7 +55,9 @@ A run record is produced when a Run completes (semantics part §6). It pins:
 }
 ```
 
-All members shown are required except `source` (informational; hashes, not
+All members shown are required except `graphInputs` (present exactly when
+the graph declares inputs; name to resolved canonical string, keys sorted),
+`source` (informational; hashes, not
 paths, carry identity) and failed effects' optional `error` text. Every
 hash in the record — graph, input content, value — is the same style: 64
 bare lowercase hex characters, SHA-256 (format part §6, semantics part
@@ -94,7 +99,8 @@ graph document, and the current external inputs:
 2. **Input check** — every `inputs` entry's content hash MUST equal the
    hash of the corresponding resolved input; otherwise replay is refused
    with reason `input-mismatch`, naming the first mismatched (node, param).
-3. **Recompute** — evaluate the graph over the pinned inputs. Replay is
+3. **Recompute** — evaluate the graph over the pinned inputs and the
+   record's `graphInputs`. Replay is
    effect-free: node outputs are recomputed (they are pure functions of
    inputs, per the semantics part §2, for Effect nodes too), but no world
    change is performed.

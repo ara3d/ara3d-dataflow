@@ -36,7 +36,7 @@ public static class RunRecordJson
             throw new FormatException("Run record must be a JSON object");
 
         string? runVersion = null, graphHash = null, engineVersion = null, timestampUtc = null;
-        JsonElement? inputs = null, nodeOutputs = null, recordedOutputs = null, effects = null;
+        JsonElement? inputs = null, nodeOutputs = null, recordedOutputs = null, effects = null, graphInputs = null;
         foreach (var p in root.EnumerateObject())
             switch (p.Name)
             {
@@ -48,6 +48,7 @@ public static class RunRecordJson
                 case "nodeOutputs": nodeOutputs = p.Value; break;
                 case "recordedOutputs": recordedOutputs = p.Value; break;
                 case "effects": effects = p.Value; break;
+                case "graphInputs": graphInputs = p.Value; break;
                 default: throw new FormatException($"Unknown run record member '{p.Name}'");
             }
 
@@ -61,7 +62,8 @@ public static class RunRecordJson
             ReadHashes(RequiredElement(nodeOutputs, "nodeOutputs")),
             ReadValues(RequiredElement(recordedOutputs, "recordedOutputs")),
             ReadEffects(RequiredElement(effects, "effects")),
-            Array.Empty<string>());
+            Array.Empty<string>(),
+            graphInputs is null ? null : ReadHashes(graphInputs.Value, "Graph input"));
     }
 
     private static byte[] WriteUtf8(RunRecord record)
@@ -78,6 +80,8 @@ public static class RunRecordJson
             WriteHashes(w, record.NodeOutputs);
             WriteValues(w, record.RecordedOutputs);
             WriteEffects(w, record.Effects);
+            if (record.GraphInputs.Count > 0)
+                WriteGraphInputs(w, record.GraphInputs);
             w.WriteEndObject();
         }
         return stream.ToArray();
@@ -98,6 +102,15 @@ public static class RunRecordJson
             w.WriteEndObject();
         }
         w.WriteEndArray();
+    }
+
+    private static void WriteGraphInputs(Utf8JsonWriter w, IReadOnlyDictionary<string, string> values)
+    {
+        w.WritePropertyName("graphInputs");
+        w.WriteStartObject();
+        foreach (var (name, value) in values.OrderBy(kv => kv.Key, StringComparer.Ordinal))
+            w.WriteString(name, value);
+        w.WriteEndObject();
     }
 
     private static void WriteHashes(Utf8JsonWriter w, IReadOnlyDictionary<string, string> hashes)
@@ -155,10 +168,10 @@ public static class RunRecordJson
         return new(Required(node, "node"), Required(param, "param"), Required(contentHash, "contentHash"), source);
     }
 
-    private static IReadOnlyDictionary<string, string> ReadHashes(JsonElement e)
+    private static IReadOnlyDictionary<string, string> ReadHashes(JsonElement e, string what = "Output hash")
         => e.EnumerateObject().ToDictionary(
             p => p.Name,
-            p => p.Value.GetString() ?? throw new FormatException($"Output hash '{p.Name}' must be a string"));
+            p => p.Value.GetString() ?? throw new FormatException($"{what} '{p.Name}' must be a string"));
 
     private static IReadOnlyDictionary<string, FlowValue> ReadValues(JsonElement e)
         => e.EnumerateObject().ToDictionary(p => p.Name, p => ValueJson.Read(p.Value));

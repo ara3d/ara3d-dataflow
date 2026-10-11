@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using Ara3D.DataFlowEngine.Abstractions;
 using Ara3D.NodeGraph;
@@ -10,11 +11,21 @@ public static class GraphEvaluator
     public static EvalSnapshot Evaluate(this GraphDocument doc, INodeRegistry registry, CancellationToken ct = default)
         => new EvalSession(registry).SetDocument(doc, ct);
 
+    /// <summary>One-shot evaluation with values for the document's graph inputs.</summary>
+    public static EvalSnapshot Evaluate(this GraphDocument doc, INodeRegistry registry,
+        IReadOnlyDictionary<string, string> graphInputs, CancellationToken ct = default)
+        => new EvalSession(registry).SetDocument(doc, graphInputs, ct);
+
     /// <summary>One-shot Run: a fresh session, one standing pass, then the Run over it.</summary>
     public static EvalSnapshot Run(this GraphDocument doc, INodeRegistry registry, CancellationToken ct = default)
+        => doc.Run(registry, new Dictionary<string, string>(), ct);
+
+    /// <summary>One-shot Run with values for the document's graph inputs.</summary>
+    public static EvalSnapshot Run(this GraphDocument doc, INodeRegistry registry,
+        IReadOnlyDictionary<string, string> graphInputs, CancellationToken ct = default)
     {
         var session = new EvalSession(registry);
-        session.SetDocument(doc, ct);
+        session.SetDocument(doc, graphInputs, ct);
         return session.Run(ct);
     }
 }

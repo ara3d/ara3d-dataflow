@@ -30,6 +30,8 @@ public sealed record EffectRecord(string Node, EffectStatus Status, string? Erro
 /// provenance. Serialized as canonical JSON with extension ".run.json".
 /// Warnings are in-memory provenance only: run.schema.json v0.1 has no warnings
 /// member (additionalProperties is false), so they are never serialized.
+/// GraphInputs pins the resolved value of every graph input; serialized as "graphInputs"
+/// only when the graph declares inputs, so records of older graphs are unchanged.
 /// TODO: propose a warnings member for a future runs.md minor version.
 /// </summary>
 public sealed record RunRecord(
@@ -40,8 +42,12 @@ public sealed record RunRecord(
     IReadOnlyDictionary<string, string> NodeOutputs,
     IReadOnlyDictionary<string, FlowValue> RecordedOutputs,
     IReadOnlyList<EffectRecord> Effects,
-    IReadOnlyList<string> Warnings)
+    IReadOnlyList<string> Warnings,
+    IReadOnlyDictionary<string, string>? GraphInputs = null)
 {
+    /// <summary>The value each declared graph input resolved to, by name; empty for a graph without inputs.</summary>
+    public IReadOnlyDictionary<string, string> GraphInputs { get; } = GraphInputs ?? new Dictionary<string, string>();
+
     public const string RunVersion = "0.1.0";
     public const string FileExtension = ".run.json";
 

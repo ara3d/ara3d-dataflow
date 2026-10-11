@@ -48,6 +48,16 @@ public static class GraphEditing
     public static GraphDocument RemoveParam(this GraphDocument doc, string nodeId, string name)
         => doc.WithNodeParams(nodeId, parameters => Without(parameters, name));
 
+    /// <summary>Declares a graph input, or replaces the declaration of the same name.</summary>
+    public static GraphDocument SetInput(this GraphDocument doc, GraphInput input)
+        => doc with { Inputs = doc.Inputs.Where(i => i.Name != input.Name).Append(input).ToList() };
+
+    /// <summary>Removes a declaration. References to it stay and fail validation until they are changed.</summary>
+    public static GraphDocument RemoveInput(this GraphDocument doc, string name)
+        => doc.Inputs.Any(i => i.Name == name)
+            ? doc with { Inputs = doc.Inputs.Where(i => i.Name != name).ToList() }
+            : throw new ArgumentException($"No graph input named '{name}'", nameof(name));
+
     public static GraphDocument SetLayout(this GraphDocument doc, string nodeId, NodeLayout layout)
         => doc.FindNode(nodeId) is null
             ? throw new ArgumentException($"No node with id '{nodeId}'", nameof(nodeId))

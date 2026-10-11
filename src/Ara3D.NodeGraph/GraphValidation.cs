@@ -14,6 +14,9 @@ public enum GraphErrorKind
     PortTypeMismatch,
     MultipleEdgesIntoPort,
     Cycle,
+    DuplicateGraphInput,
+    InvalidGraphInput,
+    UnknownGraphInput,
 }
 
 /// <summary>Target is the offending node id, endpoint, or edge, as fits the kind.</summary>
@@ -57,12 +60,39 @@ public static class GraphValidation
             errors.Add(new(GraphErrorKind.MultipleEdgesIntoPort, group.Key,
                 $"Input port '{group.Key}' has {group.Count()} incoming edges"));
 
+        ValidateGraphInputs(doc, errors);
+
         var cyclic = FindCyclicNodes(doc);
         if (cyclic.Count > 0)
             errors.Add(new(GraphErrorKind.Cycle, string.Join(", ", cyclic),
                 $"Graph contains a cycle involving: {string.Join(", ", cyclic)}"));
 
         return errors;
+    }
+
+    /// <summary>Declarations (unique valid names, an allowed kind, a default valid for the kind) and
+    /// references (each names a declared input).</summary>
+    private static void ValidateGraphInputs(GraphDocument doc, List<GraphError> errors)
+    {
+        foreach (var group in doc.Inputs.GroupBy(i => i.Name).Where(g => g.Count() > 1))
+            errors.Add(new(GraphErrorKind.DuplicateGraphInput, group.Key,
+                $"Graph input '{group.Key}' is declared {group.Count()} times"));
+        foreach (var input in doc.Inputs)
+        {
+            if (!GraphInput.IsValidName(input.Name))
+                errors.Add(new(GraphErrorKind.InvalidGraphInput, input.Name,
+                    $"Graph input name '{input.Name}' must be a letter followed by letters and digits"));
+            else if (!GraphInput.AllowedKinds.Contains(input.Kind))
+                errors.Add(new(GraphErrorKind.InvalidGraphInput, input.Name,
+                    $"Graph input '{input.Name}' has kind {input.Kind}; allowed: {string.Join(", ", GraphInput.AllowedKinds)}"));
+            else if (input.CheckValue(input.Default) is { } problem)
+                errors.Add(new(GraphErrorKind.InvalidGraphInput, input.Name,
+                    $"Graph input '{input.Name}' ({input.Kind}) has default '{input.Default}': {problem}"));
+        }
+        var declared = doc.Inputs.Select(i => i.Name).ToHashSet();
+        foreach (var (nodeId, param, name) in doc.References().Where(r => !declared.Contains(r.Input)))
+            errors.Add(new(GraphErrorKind.UnknownGraphInput, name,
+                $"Parameter '{nodeId}.{param}' refers to graph input '{name}', which the document does not declare"));
     }
 
     /// <summary>Returns the port type, or null if it could not be resolved (an error was reported, or the kind is unknown).</summary>

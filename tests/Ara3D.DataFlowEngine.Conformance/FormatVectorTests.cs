@@ -72,6 +72,7 @@ public class FormatVectorTests
             "dangling-edge" => GraphErrorKind.DanglingEdgeEndpoint,
             "cycle" => GraphErrorKind.Cycle,
             "duplicate-input-edge" => GraphErrorKind.MultipleEdgesIntoPort,
+            "undeclared-graph-input" => GraphErrorKind.UnknownGraphInput,
             _ => throw new InvalidOperationException($"Unknown invalid-reason '{reason}' — extend the runner"),
         };
 }

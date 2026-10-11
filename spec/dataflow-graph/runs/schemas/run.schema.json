@@ -28,6 +28,10 @@
         "additionalProperties": false
       }
     },
+    "graphInputs": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
     "nodeOutputs": {
       "type": "object",
       "patternProperties": {

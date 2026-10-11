@@ -19,6 +19,16 @@ Contains no I/O and no BIM.
   pass in topological order (ties by node id, ordinal), commit atomically, and
   notify observers. Observers subscribe to all passes or to one node's changes.
 - `GraphEvaluator.Evaluate(doc, registry)` — one-shot convenience.
+- Graph inputs (format part §3a). `Evaluate(doc, registry, graphInputs)`,
+  `EvalSession.SetDocument(doc, graphInputs)` and `SetGraphInputs(graphInputs)`
+  take the caller's values; every declared input resolves to the caller's value
+  or its default, and a `$name` parameter value is replaced by it before any
+  node runs, so the memo key and node outputs follow the value. The session
+  holds the caller's values (`GraphInputValues`); `SetDocument(doc)` keeps those
+  the new document still declares. An undeclared reference, an undeclared
+  caller's name, or a value the kind rejects is an `InvalidGraphException`
+  naming the input. `EvalSnapshot.GraphInputs` is what the pass used, and the
+  Runs project pins it in the record.
 - In a standing pass Effect nodes are not executed: their inputs are computed
   and exposed (`NodeResult.EffectInputs`), the node reports `EffectPending`,
   and its downstream is `Unavailable`.

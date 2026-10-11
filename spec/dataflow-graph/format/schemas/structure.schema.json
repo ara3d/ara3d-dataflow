@@ -20,6 +20,20 @@
         "additionalProperties": false
       }
     },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$" },
+          "kind": { "enum": ["FilePath", "Text", "Number", "Integer", "Boolean"] },
+          "default": { "type": "string" },
+          "description": { "type": "string", "minLength": 1 }
+        },
+        "required": ["name", "kind", "default"],
+        "additionalProperties": false
+      }
+    },
     "edges": {
       "type": "array",
       "items": {

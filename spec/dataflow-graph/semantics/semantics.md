@@ -140,6 +140,11 @@ When the key matches a cached entry, the engine MUST reuse the cached
 outputs and MUST NOT re-execute the node — for Pure nodes re-execution would
 be unobservable by §2, so this rule exists to make the conformance suite's
 evaluation counts (§8) well-defined and to keep standing evaluation cheap.
+Graph inputs (format part section 3a) are resolved before evaluation: the
+node's values-layer object in the key is the one after `$name` references are
+replaced by the resolved input values, so changing an input value changes the
+key of exactly the nodes that refer to it.
+
 Effect nodes are never memoized across Runs: every Run executes every
 reachable Effect node exactly once (§6).
 

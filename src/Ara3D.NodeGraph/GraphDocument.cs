@@ -32,6 +32,9 @@ public sealed record GraphDocument(
     IReadOnlyDictionary<string, NodeLayout> Layout,
     JsonElement? Session = null)
 {
+    /// <summary>The values the graph takes from outside (format.md §3a); serialized sorted by name in the structure layer.</summary>
+    public IReadOnlyList<GraphInput> Inputs { get; init; } = Array.Empty<GraphInput>();
+
     public static readonly GraphDocument Empty = new(
         Array.Empty<GraphNode>(),
         Array.Empty<GraphEdge>(),
