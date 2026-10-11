@@ -68,6 +68,16 @@ A graph document is one JSON object with exactly these members:
 - Port sets are declared by the node catalog for each (kind, version), not by
   the document. Port existence and type compatibility are *catalog validity*
   (§5), checked when a catalog is available.
+- The catalog may also declare the *columns* of a Table or Relation output
+  (`NodeSpec.Schemas`, at most one entry per output). The member is catalog
+  metadata: it never appears in a document, never changes a graph hash, and a
+  catalog reader that does not know it loses nothing. An entry is one of
+  `static` (the output always has these columns, each a name, a type from the
+  closed set Boolean, Integer, Number, Text, Date, Timestamp, Binary, Unknown,
+  and a nullable flag, optionally with the name of a column kind),
+  `inferred` (computed from the input shapes and parameters without
+  evaluating), or `dynamic` (depends on the data, so unknown until run).
+  An output with no entry is undeclared, which is not the same as `dynamic`.
 
 ## 3a. Graph inputs
 

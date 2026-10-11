@@ -504,7 +504,18 @@ public sealed class ScaleNode : IFlowNode
 Declare `NodeCapability.Effect` for a node that changes the world, and check
 `context.IsRun` inside it as a second line of defense. Report a non-fatal
 problem with `context.Warn`. Throw to report failure; the engine records the
-message and poisons only the downstream. For one-off nodes in tests,
+message and poisons only the downstream.
+
+A node that outputs a table may say which columns, through `NodeSpec.Schemas`
+(one `SchemaSpec` per Table or Relation output): `SchemaSpec.Static(output,
+schema, kinds)` for fixed columns (`kinds` optionally maps a column name to a
+column kind name), `SchemaSpec.Inferred(output)` when the node also implements
+`ISchemaNode.Infer(output, inputs, parameters, catalog)` and computes the
+columns from its input shapes, or `SchemaSpec.Dynamic(output)` when the columns
+depend on the data. `ISchemaCatalog` is the only design-time I/O an `Infer` may
+use (a file header, a database table, a SQL result shape), and
+`SchemaProblems()` on a node or registry lists declarations that name a missing
+output or lack `ISchemaNode`. For one-off nodes in tests,
 `DelegateNode` builds an `IFlowNode` from a spec and a lambda.
 
 ### Evaluating a graph
