@@ -26,6 +26,9 @@ public enum SuggestKind
     ColumnsOfInput,
     /// <summary>Table names inside the database file named by param <c>Source</c>.</summary>
     TablesInFile,
+    /// <summary>Files under the host's model roots whose extension is in <c>Source</c>,
+    /// a comma-separated list such as <c>.ifc,.bos</c>.</summary>
+    FilesUnderRoots,
 }
 
 /// <summary>
@@ -39,6 +42,9 @@ public sealed record SuggestSource(SuggestKind Kind, string Source)
 
     public static SuggestSource TablesInFile(string pathParam)
         => new(SuggestKind.TablesInFile, pathParam);
+
+    public static SuggestSource FilesWith(params string[] extensions)
+        => new(SuggestKind.FilesUnderRoots, string.Join(',', extensions));
 }
 
 /// <summary>Optional editor presentation. Evaluation still validates canonical values.</summary>
