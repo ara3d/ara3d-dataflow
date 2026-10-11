@@ -65,4 +65,13 @@ public class ScalarTests
     [Test]
     public void TableValueKindIsNotAScalarType()
         => Assert.That(() => ValueKind.Table.ToScalarType(), Throws.ArgumentException);
+
+    [Test]
+    public void ColumnTypesConvertToScalarTypesAndBack()
+    {
+        foreach (var type in Enum.GetValues<ScalarType>())
+            Assert.That(((ScalarType?)type).ToColumnType().ToScalarType(), Is.EqualTo(type));
+        Assert.That(ColumnType.Date.ToScalarType(), Is.Null);
+        Assert.That(((ScalarType?)null).ToColumnType(), Is.EqualTo(ColumnType.Unknown));
+    }
 }
