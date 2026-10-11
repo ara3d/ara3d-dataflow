@@ -92,6 +92,20 @@ identifies the input.
 `Effect` marks a node that changes the world (writes a file, patches a
 model, sends output). Effect nodes execute only inside a Run (§6).
 
+A parameter MAY also be declared *bindable*, with a socket type (a port
+type). It then behaves as an optional input port of the parameter's name
+and the socket type, and its name MUST NOT repeat an input port's name. When
+an edge is connected to it, the upstream value is delivered in place of the
+parameter's string: a Boolean, Integer, Number, or Text value takes the
+canonical string form, and any other kind is delivered as a value alongside
+the parameter, with the string hidden. When no edge is connected the
+parameter's string is used, as for any parameter. The connected value takes
+part in the memo key as a connected input port, named by the parameter. A
+bindable parameter that is unconnected never makes the node unready. A
+parameter MAY also be declared a *list*: a Text parameter whose value is a
+comma-separated list. The flag is advisory for editors and changes no
+evaluation.
+
 A required input port with no edge, or an unconfigured required parameter,
 makes the node *unready*: it does not evaluate, it is not an error, and
 everything downstream of it is unready too.

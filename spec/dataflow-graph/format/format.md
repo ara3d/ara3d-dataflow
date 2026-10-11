@@ -58,7 +58,9 @@ A graph document is one JSON object with exactly these members:
 
 - `nodes` — array of `{ id, kind, version }`. No other members.
 - `edges` — array of `{ from, to }` endpoints. `from` names an output port,
-  `to` names an input port.
+  `to` names an input port, or a *bindable parameter* of the target node
+  (§5 rule 2): the catalog may declare a parameter as a socket, and an edge
+  into the port of that name then supplies the parameter's value.
 - Port sets are declared by the node catalog for each (kind, version), not by
   the document. Port existence and type compatibility are *catalog validity*
   (§5), checked when a catalog is available.
@@ -115,10 +117,10 @@ Two levels, checked in order.
 
 1. Every (kind, version) is known to the catalog.
 2. Every edge endpoint names a port that exists on its node, with the correct
-   direction (`from` an output, `to` an input).
+   direction (`from` an output, `to` an input or a bindable parameter).
 3. Edge value kinds are compatible if and only if the output port's type is
-   `Any`, or the input port's type is `Any`, or the input port's type is
-   exactly the output port's kind. There is no conversion at an edge —
+   `Any`, or the input port's type (for a bindable parameter, its socket
+   type) is `Any`, or that type is exactly the output port's kind. There is no conversion at an edge —
    Integer → Number widening is deliberately deferred (the expression
    language widens internally; edges do not).
 4. Every parameter name in `values` is declared by the node's kind, and its

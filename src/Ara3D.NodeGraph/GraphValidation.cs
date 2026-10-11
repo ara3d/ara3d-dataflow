@@ -81,6 +81,10 @@ public static class GraphValidation
         foreach (var p in ports)
             if (p.Name == port.Port)
                 return p.Type;
+        if (!isOutput)
+            foreach (var param in spec.Params)
+                if (param.Bindable is { } socket && param.Name == port.Port)
+                    return socket;
         errors.Add(new(GraphErrorKind.UnknownPort, port.ToString(),
             $"Node '{port.NodeId}' (kind '{spec.Kind}') has no {(isOutput ? "output" : "input")} port '{port.Port}'"));
         return null;

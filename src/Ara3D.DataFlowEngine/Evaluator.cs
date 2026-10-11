@@ -73,22 +73,27 @@ internal static class Evaluator
                     unready = true;
                 continue;
             }
-            var upstream = results[source.NodeId];
-            switch (upstream.Status)
+            if (Upstream(source, results, flowNodes) is { } wired)
             {
-                case NodeStatus.Ok:
-                    var index = IndexOfOutput(flowNodes[source.NodeId].Spec, source.Port);
-                    inputs.Add(upstream.Outputs[index]);
-                    inputHashes.Add((port.Name, upstream.OutputHashes[index]));
-                    break;
-                case NodeStatus.Unready:
-                    unready = true;
-                    unreadyOrigin ??= upstream.BlockingNodeId ?? source.NodeId;
-                    break;
-                default:
-                    blocking ??= upstream.BlockingNodeId ?? source.NodeId;
-                    break;
+                inputs.Add(wired.Value);
+                inputHashes.Add((port.Name, wired.Hash));
             }
+            else Block(source, results, ref unready, ref unreadyOrigin, ref blocking);
+        }
+
+        // Spec semantics §2: a bindable parameter is also an input port of its own name. Unwired,
+        // it is simply absent (the string is used); wired, it joins the memo key like any input.
+        Dictionary<string, FlowValue>? bound = null;
+        foreach (var param in spec.Params)
+        {
+            if (param.Bindable is null || !edgeInto.TryGetValue($"{node.Id}.{param.Name}", out var source))
+                continue;
+            if (Upstream(source, results, flowNodes) is { } wired)
+            {
+                (bound ??= new())[param.Name] = wired.Value;
+                inputHashes.Add((param.Name, wired.Hash));
+            }
+            else Block(source, results, ref unready, ref unreadyOrigin, ref blocking);
         }
 
         var count = counts.GetValueOrDefault(node.Id);
@@ -104,7 +109,7 @@ internal static class Evaluator
                 inputs, NodeResult.NoStrings, ExecutionCount: count);
 
         // Spec semantics §4: Effect nodes are never memoized; every Run executes them.
-        return Execute(node, flowNode, doc, inputs, inputHashes, isEffect ? null : memo, counts, isRun, ct);
+        return Execute(node, flowNode, doc, inputs, inputHashes, bound, isEffect ? null : memo, counts, isRun, ct);
     }
 
     private static NodeResult Execute(
@@ -113,6 +118,7 @@ internal static class Evaluator
         GraphDocument doc,
         IReadOnlyList<FlowValue> inputs,
         IReadOnlyList<(string Port, string Hash)> inputHashes,
+        IReadOnlyDictionary<string, FlowValue>? bound,
         MemoCache? memo,
         Dictionary<string, int> counts,
         bool isRun,
@@ -130,7 +136,7 @@ internal static class Evaluator
         counts[node.Id] = counts.GetValueOrDefault(node.Id) + 1;
         try
         {
-            var values = new ParamValues(parameters);
+            var values = new ParamValues(parameters, bound);
             values.Validate(spec.Params);
             var outputs = flowNode.Eval(context, inputs, values);
             if (outputs.Count != spec.Outputs.Count)
@@ -151,6 +157,36 @@ internal static class Evaluator
                 NodeResult.NoValues, warnings, Error: $"{ex.GetType().Name}: {ex.Message}",
                 BlockingNodeId: node.Id, ExecutionCount: counts[node.Id]);
         }
+    }
+
+    /// <summary>The upstream output and its hash when the upstream node is Ok; null otherwise.</summary>
+    private static (FlowValue Value, string Hash)? Upstream(
+        PortRef source,
+        IReadOnlyDictionary<string, NodeResult> results,
+        IReadOnlyDictionary<string, IFlowNode> flowNodes)
+    {
+        var upstream = results[source.NodeId];
+        if (upstream.Status != NodeStatus.Ok)
+            return null;
+        var index = IndexOfOutput(flowNodes[source.NodeId].Spec, source.Port);
+        return (upstream.Outputs[index], upstream.OutputHashes[index]);
+    }
+
+    /// <summary>Records why a wired edge's upstream node is not Ok: unready propagates as unready, anything else blocks.</summary>
+    private static void Block(
+        PortRef source,
+        IReadOnlyDictionary<string, NodeResult> results,
+        ref bool unready,
+        ref string? unreadyOrigin,
+        ref string? blocking)
+    {
+        var upstream = results[source.NodeId];
+        if (upstream.Status == NodeStatus.Unready)
+        {
+            unready = true;
+            unreadyOrigin ??= upstream.BlockingNodeId ?? source.NodeId;
+        }
+        else blocking ??= upstream.BlockingNodeId ?? source.NodeId;
     }
 
     private static int IndexOfOutput(NodeSpec spec, string port)

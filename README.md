@@ -387,7 +387,11 @@ node the evaluator gathers inputs from upstream results and decides a status:
 
 A Pure node that is ready computes its memo key and, on a hit, reuses the
 cached outputs without executing. On a miss it executes, its outputs are
-hashed, and the entry is cached. An unconnected optional input port receives a
+hashed, and the entry is cached. A bindable parameter (`ParamSpec.Bindable`, a
+port type) is also an input port of its own name: a connected edge delivers
+its value in place of the parameter's string, and it joins the memo key like
+any connected input. `ParamSpec.List` marks a comma-separated Text parameter.
+An unconnected optional input port receives a
 `MissingValue` placeholder that never flows along an edge and never enters a
 memo key. The result of every node carries an execution count, which is what
 the conformance vectors assert when they say a memo hit or a clean re-evaluation

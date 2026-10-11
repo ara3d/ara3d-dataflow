@@ -51,13 +51,22 @@ public sealed record SuggestSource(SuggestKind Kind, string Source)
 public sealed record ParamControl(string Kind, double? Min = null, double? Max = null, double? Step = null,
     string? Unit = null, string? Label = null);
 
+/// <summary>
+/// One node parameter. Bindable, when set, makes the parameter a socket as well: an edge into
+/// the input port named like the parameter (so the name must not repeat an input port's name)
+/// supplies the value, whose kind the socket type must accept. A wired value replaces the
+/// parameter's string for that evaluation; unwired, the string is used. List marks a Text
+/// parameter holding a comma-separated list, for editors that offer a multi-value picker.
+/// </summary>
 public sealed record ParamSpec(
     string Name,
     ParamKind Kind,
     string Default = "",
     IReadOnlyList<string>? EnumValues = null,
     SuggestSource? Suggest = null,
-    ParamControl? Control = null);
+    ParamControl? Control = null,
+    PortType? Bindable = null,
+    bool List = false);
 
 /// <summary>
 /// A node's parameter values as delivered by the engine: canonical string form
@@ -65,12 +74,52 @@ public sealed record ParamSpec(
 /// </summary>
 public sealed class ParamValues
 {
+    private static readonly IReadOnlyDictionary<string, FlowValue> NoBound = new Dictionary<string, FlowValue>();
+
     public static readonly ParamValues Empty = new(new Dictionary<string, string>());
 
     private readonly IReadOnlyDictionary<string, string> _values;
+    private readonly IReadOnlyDictionary<string, FlowValue> _bound;
 
-    public ParamValues(IReadOnlyDictionary<string, string> values)
-        => _values = values;
+    /// <summary>
+    /// <paramref name="bound"/> holds the values wired into bindable parameters. A wired Boolean,
+    /// Integer, Number or Text value replaces the parameter's string with its canonical text; any
+    /// other kind hides the string, so the typed accessors fall back to their defaults and the
+    /// node reads the value through <see cref="GetBound"/>.
+    /// </summary>
+    public ParamValues(IReadOnlyDictionary<string, string> values,
+        IReadOnlyDictionary<string, FlowValue>? bound = null)
+    {
+        _bound = bound ?? NoBound;
+        _values = _bound.Count == 0 ? values : Overlay(values, _bound);
+    }
+
+    private static Dictionary<string, string> Overlay(
+        IReadOnlyDictionary<string, string> values, IReadOnlyDictionary<string, FlowValue> bound)
+    {
+        var merged = new Dictionary<string, string>(values);
+        foreach (var (name, value) in bound)
+        {
+            var text = CanonicalText(value);
+            if (text is null) merged.Remove(name);
+            else merged[name] = text;
+        }
+        return merged;
+    }
+
+    private static string? CanonicalText(FlowValue value)
+        => value switch
+        {
+            BooleanValue b => b.Value ? "true" : "false",
+            IntegerValue i => i.Value.ToString(CultureInfo.InvariantCulture),
+            NumberValue n => n.Value.ToString("R", CultureInfo.InvariantCulture),
+            TextValue t => t.Value,
+            _ => null,
+        };
+
+    /// <summary>The value wired into bindable parameter <paramref name="name"/>, or null when none is.</summary>
+    public FlowValue? GetBound(string name)
+        => _bound.GetValueOrDefault(name);
 
     public IEnumerable<string> Names
         => _values.Keys;
