@@ -101,4 +101,14 @@ public class SchemaSpecTests
         Assert.That(catalog.CsvSchema("db", "x").Ok, Is.False);
         Assert.That(catalog.QuerySchema("select 1", []).Ok, Is.False);
     }
+
+    [Test]
+    public void Static_catalog_answers_file_sources_by_format_path_and_options()
+    {
+        var options = new Dictionary<string, string> { ["table"] = "walls" };
+        var catalog = new StaticCatalog(new Dictionary<string, Schema> { [StaticCatalog.FileKey("duckdb", "a.duckdb", options)] = Two });
+        Assert.That(catalog.FileSchema("duckdb", "a.duckdb", options).Require(), Is.EqualTo(Two));
+        Assert.That(catalog.FileSchema("duckdb", "a.duckdb", new Dictionary<string, string>()).Ok, Is.False);
+        Assert.That(catalog.FileQuerySchema("select 1", ["a.csv"]).Ok, Is.False);
+    }
 }
