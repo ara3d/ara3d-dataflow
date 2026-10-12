@@ -85,6 +85,17 @@ public class SchemaSpecTests
     }
 
     [Test]
+    public void A_schema_with_warnings_is_still_ok_and_a_failure_ignores_added_warnings()
+    {
+        var warned = SchemaResult.Of(Two).WithWarnings([new SchemaError("no column 'x'")]);
+        Assert.That(warned.Ok, Is.True);
+        Assert.That(warned.Require(), Is.EqualTo(Two));
+        Assert.That(warned.Warnings.Select(w => w.Message), Is.EqualTo(new[] { "no column 'x'" }));
+        Assert.That(SchemaResult.Of(Two).Warnings, Is.Empty);
+        Assert.That(SchemaResult.Fail("bad").WithWarnings([new SchemaError("w")]).Warnings, Is.Empty);
+    }
+
+    [Test]
     public void Schema_lookup_ignores_case_and_equality_is_structural()
     {
         Assert.That(Two.Find("b")!.Value.Name, Is.EqualTo("B"));

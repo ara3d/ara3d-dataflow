@@ -5,7 +5,7 @@ edges (`FlowValue`), port and parameter descriptors (`PortSpec`, `ParamSpec`),
 node descriptors and capabilities (`NodeSpec`, Pure vs Effect), the node
 evaluation contract (`IFlowNode`, `IEvalContext`), and the node registry.
 It also holds the table shape types (`Column`, `ColumnType`, `Schema`,
-`SchemaResult`) and the declared output schemas: `NodeSpec.Schemas` of
+`SchemaResult`, a schema or errors, with warnings a run would also raise) and the declared output schemas: `NodeSpec.Schemas` of
 `SchemaSpec` (static, inferred, dynamic), `ISchemaNode` for inferred ones, and
 `ISchemaCatalog`, the design-time lookup of file headers, tables and SQL result
 shapes.
