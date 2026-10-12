@@ -32,13 +32,36 @@ public enum SuggestKind
 }
 
 /// <summary>
+/// What a suggested column is for, so a host can rank and trim the list instead of every editor
+/// guessing from kind names. Only <see cref="SuggestKind.ColumnsOfInput"/> reads it.
+/// </summary>
+public enum ColumnUse
+{
+    /// <summary>Every column, in table order.</summary>
+    Any,
+    /// <summary>A quantity to plot or sum: only numeric columns.</summary>
+    Value,
+    /// <summary>A caption or grouping: columns of role Label or Category first.</summary>
+    Label,
+    /// <summary>An identity to select or join on: columns of role Key first.</summary>
+    Key,
+    /// <summary>A join key: columns also present in the input named by <c>SharedWith</c> first, Key role among them first.</summary>
+    JoinKey,
+    /// <summary>A column to aggregate: each suggestion carries the aggregate functions its type allows,
+    /// and a leading "*" entry stands for the whole row (count only).</summary>
+    Aggregate,
+}
+
+/// <summary>
 /// Where a parameter's value suggestions come from. Advisory only: the value
 /// stays a free canonical string, and validation remains an eval-time concern.
+/// <c>Use</c> says what a suggested column is for; <c>SharedWith</c> names the other input
+/// port a <see cref="ColumnUse.JoinKey"/> column is compared with.
 /// </summary>
-public sealed record SuggestSource(SuggestKind Kind, string Source)
+public sealed record SuggestSource(SuggestKind Kind, string Source, ColumnUse Use = ColumnUse.Any, string? SharedWith = null)
 {
-    public static SuggestSource ColumnsOf(string inputPort)
-        => new(SuggestKind.ColumnsOfInput, inputPort);
+    public static SuggestSource ColumnsOf(string inputPort, ColumnUse use = ColumnUse.Any, string? sharedWith = null)
+        => new(SuggestKind.ColumnsOfInput, inputPort, use, sharedWith);
 
     public static SuggestSource TablesInFile(string pathParam)
         => new(SuggestKind.TablesInFile, pathParam);
