@@ -370,6 +370,11 @@ input values, substitutes them before the nodes run, and so the memo key and
 the run record see the resolved text. Swapping the model of a graph is then one
 value, not an edit to every reader.
 
+The optional `layout` maps a node id to its canvas position `x`, `y` and,
+when the user resized the card, its size `w`, `h`; those four keys are the
+only ones the reader accepts, and any other (such as `width` or `height`)
+fails the load with "Unknown layout member".
+
 `Ara3D.NodeGraph` implements loading, saving, hashing, editing, undo, and
 validation. Validation against a node registry reports duplicate ids, unknown
 kinds, dangling edge endpoints, unknown ports, incompatible port types, two
